@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { FriendshipService, FriendSearchResult } from '../../core/friendship/friendship.service';
 import { User } from '../../domain/models/user.model';
 import { Task } from '../../domain/models/task.model';
+import { environment } from '../../../environments/environment';
 
 interface FriendEntry {
   user: User;
@@ -51,7 +52,7 @@ export class TeamComponent implements OnInit {
     const userId = this.currentUser!.id;
     forkJoin({
       friends: this.friendshipService.getFriends(userId),
-      tasks: this.http.get<Task[]>('http://localhost:3000/tasks'),
+      tasks: this.http.get<Task[]>(`${environment.apiUrl}/tasks`),
     }).subscribe(({ friends, tasks }) => {
       this.friends = friends.map((user) => {
         const ut = tasks.filter((t) => t.assignedUserId === user.id);

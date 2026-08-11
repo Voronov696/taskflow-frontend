@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
@@ -33,24 +34,23 @@ export class RegisterComponent {
     this.isChecking = true;
     this.errorMessage = '';
 
-    this.authService.isEmailTaken(this.email).subscribe({
-      next: (taken) => {
-        if (taken) {
-          this.errorMessage = 'An account with this email already exists. Please sign in or use a different email.';
-          this.isChecking = false;
-          return;
-        }
-        this.authService.register(this.name, this.email, this.password).subscribe({
-          next: () => this.router.navigate(['/login']),
-          error: () => {
-            this.errorMessage = 'Registration failed. Try again.';
-            this.isChecking = false;
-          }
-        });
-      },
-      error: () => {
-        this.errorMessage = 'Could not verify email. Check your connection and try again.';
+    // Проверку "email уже занят" раньше делали заранее через GET /users —
+    // но этот маршрут защищён токеном, а до регистрации токена ещё нет
+    // (это и вызывало "Could not verify email"). Теперь просто шлём
+    // POST /users — сервер сам проверяет уникальность email на уровне
+    // базы и в случае конфликта отвечает 409.
+    this.authService.register(this.name, this.email, this.password).subscribe({
+      next: () => {
         this.isChecking = false;
+        this.router.navigate(['/login']);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isChecking = false;
+        if (err.status === 409) {
+          this.errorMessage = 'Этот email уже занят';
+        } else {
+          this.errorMessage = 'Registration failed. Try again.';
+        }
       }
     });
   }

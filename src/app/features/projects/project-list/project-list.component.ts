@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { Project } from '../../../domain/models/project.model';
 import { Task } from '../../../domain/models/task.model';
 import { User } from '../../../domain/models/user.model';
+import { environment } from '../../../../environments/environment';
 
 interface ProjectCard {
   project: Project;
@@ -52,12 +53,12 @@ export class ProjectListComponent implements OnInit {
     this.currentUser = this.authService.getCurrentUser();
     if (!this.currentUser) return;
 
-    this.http.get<Task[]>('http://localhost:3000/tasks').subscribe((t: Task[]) => {
+    this.http.get<Task[]>(`${environment.apiUrl}/tasks`).subscribe((t: Task[]) => {
       this.allTasks = t;
       this.buildCards();
     });
 
-    this.http.get<User[]>('http://localhost:3000/users').subscribe((u: User[]) => {
+    this.http.get<User[]>(`${environment.apiUrl}/users`).subscribe((u: User[]) => {
       this.allUsers = u;
       this.buildCards();
     });
@@ -173,7 +174,7 @@ export class ProjectListComponent implements OnInit {
     event.stopPropagation();
     this.openMenuId = null;
     if (!confirm('Delete this project? This cannot be undone.')) return;
-    this.http.delete(`http://localhost:3000/projects/${id}`).subscribe(() => {
+    this.http.delete(`${environment.apiUrl}/projects/${id}`).subscribe(() => {
       this.projectCards = this.projectCards.filter((c) => c.project.id !== id);
     });
   }
@@ -185,7 +186,7 @@ export class ProjectListComponent implements OnInit {
     this.openMenuId = null;
     if (!confirm('Pause this project? All task due dates will be cleared.')) return;
 
-    this.http.patch<Project>(`http://localhost:3000/projects/${id}`, { status: 'paused' })
+    this.http.patch<Project>(`${environment.apiUrl}/projects/${id}`, { status: 'paused' })
       .subscribe(() => {
         const card = this.projectCards.find((c) => c.project.id === id);
         if (card) card.project.status = 'paused';
@@ -195,7 +196,7 @@ export class ProjectListComponent implements OnInit {
 
         forkJoin(
           projectTasks.map((task) =>
-            this.http.patch(`http://localhost:3000/tasks/${task.id}`, { dueDate: null }),
+            this.http.patch(`${environment.apiUrl}/tasks/${task.id}`, { dueDate: null }),
           ),
         ).subscribe(() => {
           projectTasks.forEach((t) => (t.dueDate = null));
@@ -206,7 +207,7 @@ export class ProjectListComponent implements OnInit {
   unpauseProject(id: string, event: Event) {
     event.stopPropagation();
     this.openMenuId = null;
-    this.http.patch<Project>(`http://localhost:3000/projects/${id}`, { status: 'active' })
+    this.http.patch<Project>(`${environment.apiUrl}/projects/${id}`, { status: 'active' })
       .subscribe(() => {
         const card = this.projectCards.find((c) => c.project.id === id);
         if (card) card.project.status = 'active';

@@ -10,6 +10,7 @@ import { FriendshipService, FriendSearchResult } from '../../core/friendship/fri
 import { Task } from '../../domain/models/task.model';
 import { Project } from '../../domain/models/project.model';
 import { User } from '../../domain/models/user.model';
+import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 
 interface ProjectCard {
@@ -69,12 +70,12 @@ export class DashboardComponent implements OnInit {
     this.currentUser = this.authService.getCurrentUser();
     if (!this.currentUser) return;
 
-    this.http.get<User[]>('http://localhost:3000/users').subscribe((u: User[]) => {
+    this.http.get<User[]>(`${environment.apiUrl}/users`).subscribe((u: User[]) => {
       this.allUsers = u;
       this.buildCards();
     });
 
-    this.http.get<Task[]>('http://localhost:3000/tasks').subscribe((t: Task[]) => {
+    this.http.get<Task[]>(`${environment.apiUrl}/tasks`).subscribe((t: Task[]) => {
       this.allTasks = t;
       this.buildCards();
     });

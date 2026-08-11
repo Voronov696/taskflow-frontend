@@ -170,13 +170,14 @@ const PROJECT_COLUMNS = {
   description: 'description',
   dueDate: 'due_date',
   ownerId: 'owner_id',
+  status: 'status',
 };
 const PROJECT_FILTER_COLUMNS = { id: 'id', ...PROJECT_COLUMNS };
 
 // Список столбцов с алиасами — превращает snake_case базы в camelCase,
 // который ждёт фронт. Собран в константу, чтобы не дублировать в каждом
 // запросе к projects.
-const PROJECTS_SELECT = `id, name, description, due_date AS "dueDate", owner_id AS "ownerId"`;
+const PROJECTS_SELECT = `id, name, description, due_date AS "dueDate", owner_id AS "ownerId", status`;
 
 // GET /projects — поддерживает, например, GET /projects?ownerId=X —
 // тогда останутся только проекты этого владельца.
@@ -217,10 +218,11 @@ const TASK_COLUMNS = {
   status: 'status',
   projectId: 'project_id',
   assignedUserId: 'assigned_user_id',
+  completedAt: 'completed_at',
 };
 const TASK_FILTER_COLUMNS = { id: 'id', ...TASK_COLUMNS };
 
-const TASKS_SELECT = `id, title, description, status, project_id AS "projectId", assigned_user_id AS "assignedUserId"`;
+const TASKS_SELECT = `id, title, description, status, project_id AS "projectId", assigned_user_id AS "assignedUserId", completed_at AS "completedAt"`;
 
 // GET /tasks — поддерживает GET /tasks?projectId=X (задачи проекта) и
 // GET /tasks?assignedUserId=X (задачи конкретного пользователя), а также
@@ -309,6 +311,14 @@ app.post('/users', async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
+    // '23505' — код ошибки PostgreSQL "unique_violation": сработал
+    // UNIQUE-constraint (у нас — users_email_unique из schema.sql /
+    // миграции 003). Это ожидаемая ситуация ("такой email уже есть"),
+    // а не сбой сервера, поэтому ловим её отдельно и отвечаем 409
+    // (Conflict) с понятным сообщением, а не падаем в общий 500.
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Этот email уже занят' });
+    }
     console.error(err);
     res.status(500).json({ error: 'Не удалось создать пользователя' });
   }
@@ -511,17 +521,57 @@ app.post('/projects', authenticateToken, async (req, res) => {
       description: req.body.description,
       dueDate: req.body.dueDate ?? null, // необязательное поле, как и в схеме
       ownerId: req.body.ownerId,
+      // Если фронт не прислал status явно — берём тот же 'active', что
+      // и DEFAULT в схеме таблицы (см. schema.sql / миграцию 004).
+      // Задаём его и здесь, а не полагаемся только на DEFAULT в базе,
+      // чтобы RETURNING сразу вернул корректное значение независимо
+      // от того, меняли схему или нет.
+      status: req.body.status ?? 'active',
     };
     const result = await query(
-      `INSERT INTO projects (id, name, description, due_date, owner_id)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO projects (id, name, description, due_date, owner_id, status)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING ${PROJECTS_SELECT}`,
-      [newProject.id, newProject.name, newProject.description, newProject.dueDate, newProject.ownerId]
+      [newProject.id, newProject.name, newProject.description, newProject.dueDate, newProject.ownerId, newProject.status]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Не удалось создать проект' });
+  }
+});
+
+// PATCH /projects/:id — частично обновить проект (например, только status
+// для паузы/возобновления — project-list.component.ts, pauseProject()/
+// unpauseProject()). Устроен так же, как PATCH /tasks/:id: белый список
+// PROJECT_COLUMNS + buildSetClause, только известные поля из body попадают
+// в SQL.
+app.patch('/projects/:id', authenticateToken, async (req, res) => {
+  try {
+    const { setSql, params } = buildSetClause(req.body, PROJECT_COLUMNS);
+
+    if (!setSql) {
+      const existing = await query(`SELECT ${PROJECTS_SELECT} FROM projects WHERE id = $1`, [
+        req.params.id,
+      ]);
+      if (existing.rows.length === 0) {
+        return res.status(404).json({ error: 'Проект не найден' });
+      }
+      return res.json(existing.rows[0]);
+    }
+
+    params.push(req.params.id);
+    const result = await query(
+      `UPDATE projects SET ${setSql} WHERE id = $${params.length} RETURNING ${PROJECTS_SELECT}`,
+      params
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Проект не найден' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Не удалось обновить проект' });
   }
 });
 
@@ -553,10 +603,11 @@ app.post('/tasks', authenticateToken, async (req, res) => {
       status: req.body.status,
       projectId: emptyToNull(req.body.projectId), // задача может быть без проекта
       assignedUserId: emptyToNull(req.body.assignedUserId), // и без исполнителя
+      completedAt: emptyToNull(req.body.completedAt), // пусто/не пришло → NULL, не завершена
     };
     const result = await query(
-      `INSERT INTO tasks (id, title, description, status, project_id, assigned_user_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO tasks (id, title, description, status, project_id, assigned_user_id, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING ${TASKS_SELECT}`,
       [
         newTask.id,
@@ -565,6 +616,7 @@ app.post('/tasks', authenticateToken, async (req, res) => {
         newTask.status,
         newTask.projectId,
         newTask.assignedUserId,
+        newTask.completedAt,
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -590,6 +642,9 @@ app.patch('/tasks/:id', authenticateToken, async (req, res) => {
     }
     if ('projectId' in patchBody) {
       patchBody.projectId = emptyToNull(patchBody.projectId);
+    }
+    if ('completedAt' in patchBody) {
+      patchBody.completedAt = emptyToNull(patchBody.completedAt);
     }
 
     // buildSetClause берёт из patchBody только те поля, что есть в

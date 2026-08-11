@@ -13,7 +13,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id       TEXT PRIMARY KEY,      -- nanoid-строка, как в db.json
   name     TEXT NOT NULL,
-  email    TEXT NOT NULL,
+  email    TEXT NOT NULL UNIQUE,  -- на один email — только один аккаунт
   password TEXT NOT NULL
 );
 
@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS projects (
   name        TEXT NOT NULL,
   description TEXT NOT NULL,
   due_date    DATE,                -- в db.json поле есть не у всех проектов → допускаем NULL
-  owner_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+  owner_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status      TEXT NOT NULL DEFAULT 'active' -- 'active' | 'paused' | 'completed', см. project.model.ts
 );
 
 -- ===================== TASKS =====================
@@ -38,7 +39,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   description      TEXT NOT NULL,
   status           TEXT NOT NULL,
   project_id       TEXT REFERENCES projects(id) ON DELETE SET NULL,
-  assigned_user_id TEXT REFERENCES users(id) ON DELETE SET NULL
+  assigned_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  completed_at     DATE                       -- дата перехода в 'done', NULL пока не завершена
 );
 
 -- ===================== MEMBERS =====================

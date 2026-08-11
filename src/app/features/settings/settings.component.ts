@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../domain/models/user.model';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-settings',
@@ -114,7 +115,7 @@ export class SettingsComponent implements OnInit {
       birthday: this.editBirthday.trim()
     };
     this.http.put<User>(
-      `http://localhost:3000/users/${this.currentUser.id}`, updated
+      `${environment.apiUrl}/users/${this.currentUser.id}`, updated
     ).subscribe({
       next: (user) => {
         localStorage.setItem('user', JSON.stringify(user));
@@ -146,18 +147,22 @@ export class SettingsComponent implements OnInit {
     if (!this.currentPassword) {
       this.passwordError = 'Please enter your current password.'; return;
     }
-    if (this.currentUser && this.currentPassword !== (this.currentUser as any).password) {
-      this.passwordError = 'Current password is incorrect.'; return;
-    }
     if (this.newPassword.length < 6) {
       this.passwordError = 'New password must be at least 6 characters.'; return;
     }
     if (this.newPassword !== this.confirmPassword) {
       this.passwordError = 'Passwords do not match.'; return;
     }
-    const updated = { ...this.currentUser, password: this.newPassword };
+    if (!this.currentUser) return;
+
+    // Раньше текущий пароль сравнивался на клиенте с currentUser.password —
+    // но бэкенд больше не присылает password в объекте юзера вообще, да и
+    // сравнивать пароль в браузере небезопасно. Теперь используем отдельный
+    // маршрут PUT /users/:id/password — сервер сам проверяет currentPassword
+    // через bcrypt.compare с сохранённым хешем и меняет пароль одним запросом.
     this.http.put<User>(
-      `http://localhost:3000/users/${this.currentUser!.id}`, updated
+      `${environment.apiUrl}/users/${this.currentUser.id}/password`,
+      { currentPassword: this.currentPassword, newPassword: this.newPassword }
     ).subscribe({
       next: (user) => {
         localStorage.setItem('user', JSON.stringify(user));
@@ -168,7 +173,13 @@ export class SettingsComponent implements OnInit {
         this.passwordSuccess = 'Password changed successfully.';
         setTimeout(() => this.passwordSuccess = '', 3000);
       },
-      error: () => { this.passwordError = 'Failed to update password.'; }
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 401) {
+          this.passwordError = 'Current password is incorrect.';
+        } else {
+          this.passwordError = 'Failed to update password.';
+        }
+      }
     });
   }
 
@@ -178,7 +189,7 @@ export class SettingsComponent implements OnInit {
   }
   confirmDelete() {
     if (!this.currentUser) return;
-    this.http.delete(`http://localhost:3000/users/${this.currentUser.id}`)
+    this.http.delete(`${environment.apiUrl}/users/${this.currentUser.id}`)
       .subscribe({
         next: () => {
           this.authService.logout();

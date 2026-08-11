@@ -4,10 +4,11 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Friendship } from '../models/friendship.model';
 import { User } from '../models/user.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class FriendshipRepository {
-  private api = 'http://localhost:3000';
+  private api = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
