@@ -301,6 +301,14 @@
   font-size: 12px; font-weight: 500;
   padding: 5px 10px; border-radius: 20px; flex-shrink: 0;
   i { font-size: 13px; }
+
+  /* Заявка отправлена, но ещё не принята — тот же вид бейджа, что и
+     "Friends", но акцентный цвет: подтверждённая дружба и "висящая"
+     заявка не должны выглядеть одинаково. */
+  &.pending {
+    background: rgba(108,99,255,0.12);
+    color: var(--accent);
+  }
 }
 
 .friend-success-msg {

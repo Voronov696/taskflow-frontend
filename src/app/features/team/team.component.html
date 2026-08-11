@@ -9,6 +9,28 @@
     </button>
   </div>
 
+  <!-- INCOMING FRIEND REQUESTS -->
+  <div class="requests-section" *ngIf="incomingRequests.length > 0">
+    <h2 class="section-heading">Friend requests</h2>
+    <div class="requests-list">
+      <div class="result-card" *ngFor="let request of incomingRequests">
+        <div class="result-avatar">{{ getInitials(request.user.name) }}</div>
+        <div class="result-info">
+          <span class="result-name">{{ request.user.name }}</span>
+          <span class="result-email">{{ request.user.email }}</span>
+        </div>
+        <div class="result-action request-actions">
+          <button class="btn-accent" (click)="acceptRequest(request.requestId, $event)">
+            <i class="ti ti-check"></i> Accept
+          </button>
+          <button class="btn-ghost" (click)="declineRequest(request.requestId, $event)">
+            <i class="ti ti-x"></i> Decline
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- EMPTY STATE -->
   <div class="empty-dropzone" *ngIf="friends.length === 0" (click)="openSearchModal()">
     <i class="ti ti-users"></i>
@@ -86,23 +108,26 @@
     </div>
 
     <!-- NOT FOUND -->
-    <div class="search-empty" *ngIf="searchDone && !searchResult">
+    <div class="search-empty" *ngIf="searchDone && searchResults.length === 0">
       <i class="ti ti-user-x"></i>
       <span>No user found with that exact name or email.</span>
     </div>
 
-    <!-- RESULT CARD -->
-    <div class="result-card" *ngIf="searchResult">
-      <div class="result-avatar">{{ getInitials(searchResult.user.name) }}</div>
+    <!-- RESULT CARDS -->
+    <div class="result-card" *ngFor="let result of searchResults">
+      <div class="result-avatar">{{ getInitials(result.user.name) }}</div>
       <div class="result-info">
-        <span class="result-name">{{ searchResult.user.name }}</span>
-        <span class="result-email">{{ searchResult.user.email }}</span>
+        <span class="result-name">{{ result.user.name }}</span>
+        <span class="result-email">{{ result.user.email }}</span>
       </div>
       <div class="result-action">
-        <span class="already-badge" *ngIf="searchResult.alreadyFriend">
+        <span class="already-badge" *ngIf="result.status === 'accepted'">
           <i class="ti ti-check"></i> Friends
         </span>
-        <button class="btn-accent" *ngIf="!searchResult.alreadyFriend" (click)="addFriend()">
+        <span class="already-badge pending" *ngIf="result.status === 'pending'">
+          <i class="ti ti-clock"></i> Requested
+        </span>
+        <button class="btn-accent" *ngIf="result.status === 'none'" (click)="addFriend(result.user)">
           <i class="ti ti-user-plus"></i> Add
         </button>
       </div>
@@ -111,7 +136,7 @@
     <!-- SUCCESS MESSAGE -->
     <div class="success-msg" *ngIf="addSuccess">
       <i class="ti ti-circle-check"></i>
-      <span>{{ addedName }} has been added to your team!</span>
+      <span>Friend request sent to {{ addedName }}!</span>
     </div>
 
     <div class="modal-actions">

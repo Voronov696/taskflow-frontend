@@ -210,26 +210,29 @@
         {{ isFriendSearching ? 'Searching…' : 'Search' }}
       </button>
     </div>
-    <div *ngIf="friendSearchDone && !friendSearchResult"
+    <div *ngIf="friendSearchDone && friendSearchResults.length === 0"
          style="display:flex;align-items:center;gap:8px;color:#6b6f8a;font-size:13px">
       <i class="ti ti-user-x" style="font-size:18px;color:#3a3d52"></i>
       No user found with that name or email.
     </div>
-    <div *ngIf="friendSearchResult" class="friend-result-card">
-      <div class="friend-result-avatar">{{ getFriendInitials(friendSearchResult.user.name) }}</div>
+    <div *ngFor="let result of friendSearchResults" class="friend-result-card">
+      <div class="friend-result-avatar">{{ getFriendInitials(result.user.name) }}</div>
       <div class="friend-result-info">
-        <span class="friend-result-name">{{ friendSearchResult.user.name }}</span>
-        <span class="friend-result-email">{{ friendSearchResult.user.email }}</span>
+        <span class="friend-result-name">{{ result.user.name }}</span>
+        <span class="friend-result-email">{{ result.user.email }}</span>
       </div>
-      <span *ngIf="friendSearchResult.alreadyFriend" class="already-badge">
+      <span *ngIf="result.status === 'accepted'" class="already-badge">
         <i class="ti ti-check"></i> Friends
       </span>
-      <button *ngIf="!friendSearchResult.alreadyFriend" class="btn-accent" (click)="addFriendFromDashboard()">
+      <span *ngIf="result.status === 'pending'" class="already-badge pending">
+        <i class="ti ti-clock"></i> Requested
+      </span>
+      <button *ngIf="result.status === 'none'" class="btn-accent" (click)="addFriendFromDashboard(result.user)">
         <i class="ti ti-user-plus"></i> Add
       </button>
     </div>
     <div *ngIf="friendAddSuccess" class="friend-success-msg">
-      <i class="ti ti-circle-check"></i> {{ friendAddedName }} added to your team!
+      <i class="ti ti-circle-check"></i> Friend request sent to {{ friendAddedName }}!
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" (click)="closeFriendModal()">Close</button>

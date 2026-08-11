@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
-import { FriendshipService, FriendSearchResult } from '../../core/friendship/friendship.service';
+import { FriendshipService, FriendSearchResult, IncomingRequest } from '../../core/friendship/friendship.service';
 import { User } from '../../domain/models/user.model';
 import { Task } from '../../domain/models/task.model';
 import { environment } from '../../../environments/environment';
@@ -25,10 +25,11 @@ interface FriendEntry {
 export class TeamComponent implements OnInit {
   currentUser: User | null = null;
   friends: FriendEntry[] = [];
+  incomingRequests: IncomingRequest[] = [];
 
   showSearchModal = false;
   searchQuery = '';
-  searchResult: FriendSearchResult | null = null;
+  searchResults: FriendSearchResult[] = [];
   isSearching = false;
   searchDone = false;
   addSuccess = false;
@@ -46,6 +47,7 @@ export class TeamComponent implements OnInit {
     this.currentUser = this.authService.getCurrentUser();
     if (!this.currentUser) return;
     this.loadFriends();
+    this.loadIncomingRequests();
   }
 
   loadFriends() {
@@ -65,6 +67,29 @@ export class TeamComponent implements OnInit {
     });
   }
 
+  loadIncomingRequests() {
+    this.friendshipService.getIncomingRequests(this.currentUser!.id).subscribe((requests) => {
+      this.incomingRequests = requests;
+    });
+  }
+
+  acceptRequest(requestId: string, event: Event) {
+    event.stopPropagation();
+    this.friendshipService.acceptRequest(requestId).subscribe(() => {
+      this.incomingRequests = this.incomingRequests.filter((r) => r.requestId !== requestId);
+      // Только что принятая заявка стала дружбой — перечитываем список
+      // друзей, чтобы отправитель сразу появился в members-grid.
+      this.loadFriends();
+    });
+  }
+
+  declineRequest(requestId: string, event: Event) {
+    event.stopPropagation();
+    this.friendshipService.declineRequest(requestId).subscribe(() => {
+      this.incomingRequests = this.incomingRequests.filter((r) => r.requestId !== requestId);
+    });
+  }
+
   openSearchModal() {
     this.showSearchModal = true;
     this.resetSearch();
@@ -77,7 +102,7 @@ export class TeamComponent implements OnInit {
 
   resetSearch() {
     this.searchQuery = '';
-    this.searchResult = null;
+    this.searchResults = [];
     this.isSearching = false;
     this.searchDone = false;
     this.addSuccess = false;
@@ -88,13 +113,13 @@ export class TeamComponent implements OnInit {
     const q = this.searchQuery.trim();
     if (!q || !this.currentUser) return;
     this.isSearching = true;
-    this.searchResult = null;
+    this.searchResults = [];
     this.searchDone = false;
     this.addSuccess = false;
 
-    this.friendshipService.searchUser(q, this.currentUser.id).subscribe({
-      next: (result) => {
-        this.searchResult = result;
+    this.friendshipService.searchUsers(q, this.currentUser.id).subscribe({
+      next: (results) => {
+        this.searchResults = results;
         this.isSearching = false;
         this.searchDone = true;
       },
@@ -109,15 +134,19 @@ export class TeamComponent implements OnInit {
     if (event.key === 'Enter') this.performSearch();
   }
 
-  addFriend() {
-    if (!this.searchResult || this.searchResult.alreadyFriend || !this.currentUser) return;
-    const target = this.searchResult.user;
+  addFriend(target: User) {
+    if (!this.currentUser) return;
 
     this.friendshipService.addFriend(this.currentUser.id, target.id).subscribe(() => {
       this.addedName = target.name;
       this.addSuccess = true;
-      this.searchResult = { ...this.searchResult!, alreadyFriend: true };
-      this.loadFriends();
+      // Заявка отправлена, но ещё не принята — помечаем именно этого
+      // кандидата как 'pending' (не 'accepted'), остальные результаты
+      // списка не трогаем. Друзьями они станут только после accept
+      // на стороне получателя.
+      this.searchResults = this.searchResults.map(r =>
+        r.user.id === target.id ? { ...r, status: 'pending' as const } : r
+      );
     });
   }
 

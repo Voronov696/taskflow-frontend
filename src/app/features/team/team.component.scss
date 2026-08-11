@@ -36,6 +36,30 @@
   }
 }
 
+.requests-section {
+  margin-bottom: 28px;
+}
+
+.section-heading {
+  color: #8b8fa8;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 12px;
+}
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.request-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .members-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -184,6 +208,14 @@
   font-size: 12px; font-weight: 500;
   padding: 5px 10px; border-radius: 20px;
   i { font-size: 13px; }
+
+  /* Заявка отправлена, но ещё не принята — тот же вид бейджа, что и
+     "Friends", но акцентный, а не зелёный цвет: подтверждённая дружба
+     и "висящая" заявка не должны выглядеть одинаково. */
+  &.pending {
+    background: rgba(108,99,255,0.12);
+    color: var(--accent);
+  }
 }
 
 .success-msg {

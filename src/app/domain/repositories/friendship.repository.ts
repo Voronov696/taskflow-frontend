@@ -12,20 +12,28 @@ export class FriendshipRepository {
 
   constructor(private http: HttpClient) {}
 
-  /** Records where the current user initiated the friendship. */
-  getWhereSender(userId: string): Observable<Friendship[]> {
-    return this.http.get<Friendship[]>(`${this.api}/friendships?userId=${userId}`);
+  /**
+   * All friendship records involving the current user (either direction —
+   * the server derives "current user" from the JWT, not from any query
+   * param, and merges both directions itself; see server.js, GET /friendships).
+   * Optional status filter narrows to 'pending' or 'accepted' records.
+   */
+  getMine(status?: 'pending' | 'accepted'): Observable<Friendship[]> {
+    const suffix = status ? `?status=${status}` : '';
+    return this.http.get<Friendship[]>(`${this.api}/friendships${suffix}`);
   }
 
-  /** Records where the current user was added by someone else. */
-  getWhereReceiver(userId: string): Observable<Friendship[]> {
-    return this.http.get<Friendship[]>(`${this.api}/friendships?friendId=${userId}`);
-  }
-
+  /** Sends a friend request (server always creates it as status='pending'). */
   add(userId: string, friendId: string): Observable<Friendship> {
     return this.http.post<Friendship>(`${this.api}/friendships`, { userId, friendId });
   }
 
+  /** Accepts a pending request — only the recipient may call this (server-enforced). */
+  accept(id: string): Observable<Friendship> {
+    return this.http.patch<Friendship>(`${this.api}/friendships/${id}`, {});
+  }
+
+  /** Declines a pending request, or removes an accepted friendship — same endpoint either way. */
   remove(id: string): Observable<void> {
     return this.http.delete<void>(`${this.api}/friendships/${id}`);
   }

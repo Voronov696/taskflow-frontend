@@ -61,5 +61,6 @@ CREATE TABLE IF NOT EXISTS members (
 CREATE TABLE IF NOT EXISTS friendships (
   id        TEXT PRIMARY KEY,
   user_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  friend_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+  friend_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status    TEXT NOT NULL DEFAULT 'accepted' -- 'pending' | 'accepted'
 );

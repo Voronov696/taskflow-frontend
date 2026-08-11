@@ -280,22 +280,43 @@ app.get('/members', authenticateToken, async (req, res) => {
 
 // ===================== FRIENDSHIPS: столбцы и SELECT =====================
 
-const FRIENDSHIP_COLUMNS = {
-  userId: 'user_id',
-  friendId: 'friend_id',
-};
-const FRIENDSHIP_FILTER_COLUMNS = { id: 'id', ...FRIENDSHIP_COLUMNS };
+const FRIENDSHIPS_SELECT = `id, user_id AS "userId", friend_id AS "friendId", status`;
 
-const FRIENDSHIPS_SELECT = `id, user_id AS "userId", friend_id AS "friendId"`;
-
-// GET /friendships — поддерживает GET /friendships?userId=X (записи, где
-// X — инициатор) и GET /friendships?friendId=X (записи, где X добавили) —
-// friendship.repository.ts дергает оба варианта отдельно и объединяет
-// результат на фронте (см. friendship.service.ts, getAllFriendships()).
+// GET /friendships — НАМЕРЕННО не использует buildWhereClause с белым
+// списком userId/friendId, как это сделано у projects/tasks/members.
+// Там query-параметры типа ?ownerId=X — это просто фильтр по столбцу,
+// одинаково безопасный для любого X: юзер и так имеет право видеть
+// все проекты (или сузить выборку своими же). У friendships иначе —
+// сама запись описывает связь ДВУХ конкретных людей, и то, что в неё
+// вообще можно заглянуть, обязано зависеть от того, КТО спрашивает,
+// а не от того, что он написал в URL.
+//
+// Если бы тут просто прогнали req.query через buildWhereClause с
+// userId/friendId в белом списке, то любой залогиненный (с ЛЮБЫМ
+// валидным токеном) мог бы сделать GET /friendships?userId=<чужой-id>
+// и увидеть чужой список друзей — токен доказывает "кто-то авторизован",
+// а не "именно вот эти записи его". Поэтому query.userId/query.friendId
+// вообще не участвуют в SQL — единственный источник "чей это запрос" —
+// req.user.id из ПОДПИСАННОГО токена (см. authenticateToken), и условие
+// "юзер — участник записи" добавляется в WHERE всегда, безусловно.
+// Единственное, что берём из query — необязательный ?status=, потому
+// что это не сужение "чьи записи видно" (оно и так уже жёстко задано),
+// а просто фильтр внутри уже дозволенного набора (например, только
+// 'pending' — для списка входящих заявок).
 app.get('/friendships', authenticateToken, async (req, res) => {
   try {
-    const { whereSql, params } = buildWhereClause(req.query, FRIENDSHIP_FILTER_COLUMNS);
-    const result = await query(`SELECT ${FRIENDSHIPS_SELECT} FROM friendships${whereSql}`, params);
+    const conditions = ['(user_id = $1 OR friend_id = $1)'];
+    const params = [req.user.id];
+
+    if (typeof req.query.status === 'string') {
+      params.push(req.query.status);
+      conditions.push(`status = $${params.length}`);
+    }
+
+    const result = await query(
+      `SELECT ${FRIENDSHIPS_SELECT} FROM friendships WHERE ${conditions.join(' AND ')}`,
+      params
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -765,7 +786,12 @@ app.delete('/members/:id', authenticateToken, async (req, res) => {
 
 // ===================== FRIENDSHIPS: запись (PostgreSQL) =====================
 
-// POST /friendships — создать новую дружбу.
+// POST /friendships — отправить заявку в друзья. Раньше это сразу
+// создавало готовую дружбу — теперь это только заявка: status всегда
+// 'pending' при создании (явно, не полагаясь на DEFAULT колонки в схеме —
+// тот DEFAULT='accepted' существует только ради уже существующих старых
+// записей, см. миграцию 007). Дружба становится 'accepted' только через
+// отдельный PATCH ниже, и то — если её примет получатель.
 app.post('/friendships', authenticateToken, async (req, res) => {
   try {
     const newFriendship = {
@@ -774,27 +800,79 @@ app.post('/friendships', authenticateToken, async (req, res) => {
       friendId: req.body.friendId,
     };
     const result = await query(
-      `INSERT INTO friendships (id, user_id, friend_id)
-       VALUES ($1, $2, $3)
+      `INSERT INTO friendships (id, user_id, friend_id, status)
+       VALUES ($1, $2, $3, 'pending')
        RETURNING ${FRIENDSHIPS_SELECT}`,
       [newFriendship.id, newFriendship.userId, newFriendship.friendId]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось добавить друга' });
+    res.status(500).json({ error: 'Не удалось отправить заявку в друзья' });
   }
 });
 
-// DELETE /friendships/:id — удалить дружбу по id записи.
-app.delete('/friendships/:id', authenticateToken, async (req, res) => {
+// PATCH /friendships/:id — принять заявку в друзья (status → 'accepted').
+// Это НЕ generic-PATCH по образцу PATCH /tasks/:id или /projects/:id —
+// единственное, что тут вообще можно сделать, это принять заявку, body
+// не участвует в SQL вообще (никакого buildSetClause), чтобы через этот
+// маршрут нельзя было переписать что-то ещё, кроме status.
+app.patch('/friendships/:id', authenticateToken, async (req, res) => {
   try {
-    const result = await query('DELETE FROM friendships WHERE id = $1 RETURNING id', [
+    const existing = await query('SELECT friend_id FROM friendships WHERE id = $1', [
       req.params.id,
     ]);
-    if (result.rows.length === 0) {
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Заявка не найдена' });
+    }
+
+    // Принять заявку может ТОЛЬКО получатель (friend_id из записи) —
+    // req.user.id берём из подписанного токена, а не из body/URL, ему
+    // можно доверять (см. authenticateToken). Без этой проверки сам
+    // отправитель (user_id) мог бы прислать сюда id своей же заявки
+    // и подтвердить дружбу сам с собой — тогда "принятие получателем"
+    // ничего бы не значило, любая заявка стала бы дружбой мгновенно,
+    // ровно то поведение, от которого мы уходим этим шагом.
+    if (req.user.id !== existing.rows[0].friend_id) {
+      return res.status(403).json({ error: 'Принять заявку может только получатель' });
+    }
+
+    const result = await query(
+      `UPDATE friendships SET status = 'accepted' WHERE id = $1 RETURNING ${FRIENDSHIPS_SELECT}`,
+      [req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Не удалось принять заявку' });
+  }
+});
+
+// DELETE /friendships/:id — отклонить заявку (пока status='pending') или
+// удалить из друзей (после того, как status='accepted') — маршрут один
+// и тот же для обоих случаев, разница только в том, что уже произошло.
+app.delete('/friendships/:id', authenticateToken, async (req, res) => {
+  try {
+    const existing = await query('SELECT user_id, friend_id FROM friendships WHERE id = $1', [
+      req.params.id,
+    ]);
+    if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'Запись о дружбе не найдена' });
     }
+
+    // Удалить может только один из двух участников записи — либо тот,
+    // кто отправил заявку/дружбу (user_id), либо тот, кому её отправили
+    // (friend_id). req.user.id — снова из токена, а не из URL/body.
+    // Без этой проверки любой залогиненный (с ЛЮБЫМ валидным токеном)
+    // мог бы удалить/отклонить чужую дружбу или чужую заявку, просто
+    // подобрав/угадав id записи — сам факт авторизации не означает
+    // "это твоя запись".
+    const { user_id, friend_id } = existing.rows[0];
+    if (req.user.id !== user_id && req.user.id !== friend_id) {
+      return res.status(403).json({ error: 'Нельзя удалить чужую заявку или дружбу' });
+    }
+
+    await query('DELETE FROM friendships WHERE id = $1', [req.params.id]);
     res.json({});
   } catch (err) {
     console.error(err);

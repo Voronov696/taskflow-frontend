@@ -50,7 +50,7 @@ export class DashboardComponent implements OnInit {
 
   showFriendModal = false;
   friendSearchQuery = '';
-  friendSearchResult: FriendSearchResult | null = null;
+  friendSearchResults: FriendSearchResult[] = [];
   isFriendSearching = false;
   friendSearchDone = false;
   friendAddSuccess = false;
@@ -323,7 +323,7 @@ export class DashboardComponent implements OnInit {
   openFriendModal() {
     this.showFriendModal = true;
     this.friendSearchQuery = '';
-    this.friendSearchResult = null;
+    this.friendSearchResults = [];
     this.isFriendSearching = false;
     this.friendSearchDone = false;
     this.friendAddSuccess = false;
@@ -336,13 +336,13 @@ export class DashboardComponent implements OnInit {
     const q = this.friendSearchQuery.trim();
     if (!q || !this.currentUser) return;
     this.isFriendSearching = true;
-    this.friendSearchResult = null;
+    this.friendSearchResults = [];
     this.friendSearchDone = false;
     this.friendAddSuccess = false;
 
-    this.friendshipService.searchUser(q, this.currentUser.id).subscribe({
-      next: (result) => {
-        this.friendSearchResult = result;
+    this.friendshipService.searchUsers(q, this.currentUser.id).subscribe({
+      next: (results) => {
+        this.friendSearchResults = results;
         this.isFriendSearching = false;
         this.friendSearchDone = true;
       },
@@ -357,13 +357,17 @@ export class DashboardComponent implements OnInit {
     if (event.key === 'Enter') this.performFriendSearch();
   }
 
-  addFriendFromDashboard() {
-    if (!this.friendSearchResult || this.friendSearchResult.alreadyFriend || !this.currentUser) return;
-    const target = this.friendSearchResult.user;
+  addFriendFromDashboard(target: User) {
+    if (!this.currentUser) return;
     this.friendshipService.addFriend(this.currentUser.id, target.id).subscribe(() => {
       this.friendAddedName = target.name;
       this.friendAddSuccess = true;
-      this.friendSearchResult = { ...this.friendSearchResult!, alreadyFriend: true };
+      // Заявка отправлена, но ещё не принята — помечаем именно этого
+      // кандидата как 'pending' (не 'accepted'). Друзьями они станут
+      // только после accept на стороне получателя (team.component.ts).
+      this.friendSearchResults = this.friendSearchResults.map(r =>
+        r.user.id === target.id ? { ...r, status: 'pending' as const } : r
+      );
     });
   }
 
