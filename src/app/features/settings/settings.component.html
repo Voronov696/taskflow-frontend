@@ -1,0 +1,265 @@
+<div class="settings-page">
+    <div class="page-header">
+        <h1>Settings</h1>
+        <p class="subtitle">Manage your account, appearance and preferences.</p>
+    </div>
+
+    <div class="settings-layout">
+        <div class="settings-sidebar">
+            <div class="settings-nav-item" [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'">
+                <i class="ti ti-user"></i> Profile
+            </div>
+            <div class="settings-nav-item" [class.active]="activeTab === 'appearance'"
+                (click)="activeTab = 'appearance'">
+                <i class="ti ti-palette"></i> Appearance
+            </div>
+            <div class="settings-nav-item" [class.active]="activeTab === 'notifications'"
+                (click)="activeTab = 'notifications'">
+                <i class="ti ti-bell"></i> Notifications
+            </div>
+            <div class="settings-nav-item" [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">
+                <i class="ti ti-shield"></i> Security
+            </div>
+            <div class="settings-nav-item danger" [class.active]="activeTab === 'danger'"
+                (click)="activeTab = 'danger'">
+                <i class="ti ti-alert-triangle"></i> Danger zone
+            </div>
+        </div>
+
+        <div class="settings-content">
+            <!-- PROFILE -->
+            <div *ngIf="activeTab === 'profile'" class="section">
+                <div class="section-header">
+                    <h2>Profile</h2>
+                    <p>This is how others see you in the workspace.</p>
+                </div>
+
+                <div class="avatar-row">
+                    <div class="avatar-large">{{ initials }}</div>
+                    <div>
+                        <p class="avatar-name">{{ currentUser?.name }}</p>
+                        <p class="avatar-email">{{ currentUser?.email }}</p>
+                    </div>
+                    <div class="unsaved-badge" *ngIf="hasUnsavedChanges">
+                        <i class="ti ti-circle-dot"></i> Unsaved changes
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Full name</label>
+                    <input class="input" type="text" [(ngModel)]="editName" (ngModelChange)="onProfileChange()"
+                        placeholder="Your name" />
+                </div>
+
+                <div class="form-group">
+                    <label>Email address</label>
+                    <input class="input" type="email" [(ngModel)]="editEmail" (ngModelChange)="onProfileChange()"
+                        placeholder="your@email.com" />
+                </div>
+
+                <div class="form-group">
+                    <label>Birthday <span class="optional">— optional</span></label>
+                    <div class="date-wrap">
+                      <i class="ti ti-calendar cal-icon"></i>
+                      <input class="input" type="date" [(ngModel)]="editBirthday" (ngModelChange)="onProfileChange()" />
+                    </div>
+                </div>
+
+                <div class="feedback success" *ngIf="successMessage">
+                    <i class="ti ti-circle-check"></i> {{ successMessage }}
+                </div>
+                <div class="feedback error" *ngIf="errorMessage">
+                    <i class="ti ti-alert-circle"></i> {{ errorMessage }}
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-primary" [class.disabled]="!hasUnsavedChanges" [disabled]="!hasUnsavedChanges"
+                        (click)="saveProfile()">
+                        Save changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- APPEARANCE -->
+            <div *ngIf="activeTab === 'appearance'" class="section">
+                <div class="section-header">
+                    <h2>Appearance</h2>
+                    <p>Customize how TaskFlow looks for you.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Accent color</label>
+                    <p class="field-desc">
+                        Used for buttons, active states, and highlights.
+                    </p>
+                    <div class="color-grid">
+                        <div class="color-option" *ngFor="let c of accentColors" [style.background]="c.value"
+                            [class.selected]="selectedAccent === c.value" (click)="selectAccent(c.value)">
+                            <i class="ti ti-check" *ngIf="selectedAccent === c.value"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Language</label>
+                    <p class="field-desc">
+                        Interface language. More languages coming soon.
+                    </p>
+                    <select class="input select">
+                        <option>English</option>
+                        <option>Français</option>
+                        <option>Русский</option>
+                        <option>Українська</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- NOTIFICATIONS -->
+            <div *ngIf="activeTab === 'notifications'" class="section">
+                <div class="section-header">
+                    <h2>Notifications</h2>
+                    <p>Choose what you want to be notified about.</p>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Task assigned to me</span>
+                        <span class="toggle-desc">When someone assigns a task to you</span>
+                    </div>
+                    <div class="toggle" [class.on]="notifications.taskAssigned"
+                        (click)="notifications.taskAssigned = !notifications.taskAssigned">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Project updates</span>
+                        <span class="toggle-desc">When a project you're in is updated</span>
+                    </div>
+                    <div class="toggle" [class.on]="notifications.projectUpdates" (click)="
+              notifications.projectUpdates = !notifications.projectUpdates
+            ">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Weekly summary</span>
+                        <span class="toggle-desc">A weekly overview of your productivity</span>
+                    </div>
+                    <div class="toggle" [class.on]="notifications.weeklySummary"
+                        (click)="notifications.weeklySummary = !notifications.weeklySummary">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </div>
+
+                <div class="feedback success" *ngIf="successMessage">
+                    <i class="ti ti-circle-check"></i> {{ successMessage }}
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-primary" (click)="saveNotifications()">
+                        Save preferences
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECURITY -->
+            <div *ngIf="activeTab === 'security'" class="section">
+                <div class="section-header">
+                    <h2>Security</h2>
+                    <p>Update your password to keep your account secure.</p>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">User ID</span>
+                    <span class="info-value mono">{{ currentUser?.id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ currentUser?.email }}</span>
+                </div>
+
+                <div class="divider"></div>
+
+                <h3 class="subsection-title">Change password</h3>
+
+                <div class="form-group">
+                    <label>Current password</label>
+                    <input class="input" type="password" [(ngModel)]="currentPassword" placeholder="••••••••" />
+                </div>
+                <div class="form-group">
+                    <label>New password</label>
+                    <input class="input" type="password" [(ngModel)]="newPassword"
+                        placeholder="At least 6 characters" />
+                </div>
+                <div class="form-group">
+                    <label>Confirm new password</label>
+                    <input class="input" type="password" [(ngModel)]="confirmPassword"
+                        placeholder="Repeat new password" />
+                </div>
+
+                <div class="feedback error" *ngIf="passwordError">
+                    <i class="ti ti-alert-circle"></i> {{ passwordError }}
+                </div>
+                <div class="feedback success" *ngIf="passwordSuccess">
+                    <i class="ti ti-circle-check"></i> {{ passwordSuccess }}
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-primary" (click)="changePassword()">
+                        Update password
+                    </button>
+                </div>
+            </div>
+
+            <!-- DANGER ZONE -->
+            <div *ngIf="activeTab === 'danger'" class="section">
+                <div class="section-header">
+                    <h2>Danger zone</h2>
+                    <p>These actions are permanent and cannot be undone.</p>
+                </div>
+
+                <div class="danger-item">
+                    <div class="danger-info">
+                        <span class="danger-title">Sign out</span>
+                        <span class="danger-desc">End your current session on this device.</span>
+                    </div>
+                    <button class="btn-ghost" (click)="logout()">
+                        <i class="ti ti-logout"></i> Sign out
+                    </button>
+                </div>
+
+                <div class="danger-item">
+                    <div class="danger-info">
+                        <span class="danger-title">Delete account</span>
+                        <span class="danger-desc">
+                            Permanently delete your account and all associated data.
+                        </span>
+                    </div>
+                    <button class="btn-danger" (click)="showDeleteWarning = !showDeleteWarning">
+                        <i class="ti ti-trash"></i> Delete account
+                    </button>
+                </div>
+
+                <div class="delete-warning" *ngIf="showDeleteWarning">
+                    <i class="ti ti-alert-triangle"></i>
+                    <div>
+                        <strong>Are you absolutely sure?</strong>
+                        <p>This will permanently delete your account. This cannot be undone.</p>
+                        <div style="display:flex; gap:8px; margin-top:12px">
+                            <button class="btn-danger" (click)="confirmDelete()">
+                                <i class="ti ti-trash"></i> Yes, delete my account
+                            </button>
+                            <button class="btn-ghost" (click)="showDeleteWarning = false">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

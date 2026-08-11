@@ -1,0 +1,15 @@
+<mat-toolbar color="primary">
+  <span>TaskFlow</span>
+  <span class="spacer"></span>
+  <span class="user-name">{{ currentUser?.name }}</span>
+  <button mat-button (click)="onLogout()">Log Out</button>
+</mat-toolbar>
+
+<mat-tab-group (selectedIndexChange)="navigateTo($event === 0 ? 'projects' : 'my-tasks')">
+  <mat-tab label="📁 Projects"></mat-tab>
+  <mat-tab label="✅ My Tasks"></mat-tab>
+</mat-tab-group>
+
+<div class="content">
+  <router-outlet />
+</div>

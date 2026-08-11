@@ -1,0 +1,317 @@
+{
+  "users": [
+    {
+      "name": "Denys",
+      "email": "email987@gmail.com",
+      "password": "111111",
+      "id": "kTcn0xkjGnA"
+    },
+    {
+      "name": "user1",
+      "email": "u1@.com",
+      "password": "123456",
+      "id": "969r0h2NT14"
+    },
+    {
+      "name": "user2",
+      "email": "u2@.com",
+      "password": "123456",
+      "id": "u2kLmN3pQr4"
+    },
+    {
+      "name": "user3",
+      "email": "u3@.com",
+      "password": "123456",
+      "id": "u3sTuV5wXy6"
+    },
+    {
+      "name": "user4",
+      "email": "u4@.com",
+      "password": "123456",
+      "id": "u4zAbC7dEf8"
+    },
+    {
+      "name": "user5",
+      "email": "u5@.com",
+      "password": "123456",
+      "id": "u5gHiJ9kLm0"
+    },
+    {
+      "name": "user6",
+      "email": "u6@.com",
+      "password": "123456",
+      "id": "u6nOpQ1rSt2"
+    },
+    {
+      "name": "user7",
+      "email": "u7@.com",
+      "password": "123456",
+      "id": "u7uVwX3yZa4"
+    },
+    {
+      "name": "user8",
+      "email": "u8@.com",
+      "password": "123456",
+      "id": "u8bCdE5fGh6"
+    },
+    {
+      "name": "derector",
+      "email": "pon@.com",
+      "password": "123456",
+      "id": "owrX4H3QTm0"
+    },
+    {
+      "name": "debil",
+      "email": "debil@.com",
+      "password": "123456",
+      "id": "db9iJkLm7no"
+    },
+    {
+      "name": "test",
+      "email": "test1@.com",
+      "password": "123456",
+      "id": "OxwLyyWFIH8"
+    },
+    {
+      "name": "test2",
+      "email": "test2@.com",
+      "password": "123456",
+      "id": "2cp2Q__Rq1k"
+    },
+    {
+      "name": "test 3",
+      "email": "test3@.com",
+      "password": "123456",
+      "id": "HTocDJ7jgMA"
+    },
+    {
+      "name": "test3",
+      "email": "test3@.com",
+      "password": "123456",
+      "id": "2M1q-adyzoU"
+    },
+    {
+      "name": "test4",
+      "email": "test4@.com",
+      "password": "123456",
+      "id": "qIWtTwh0-GY"
+    },
+    {
+      "name": "test5",
+      "email": "test5@gmail.com",
+      "password": "123456",
+      "id": "_02mOVSuzdo"
+    }
+  ],
+  "projects": [
+    {
+      "name": "prepare car",
+      "description": "not ampottont",
+      "ownerId": "owrX4H3QTm0",
+      "status": "active",
+      "id": "nSb_ZFwf7dQ"
+    },
+    {
+      "name": "построить дом",
+      "description": "//--//",
+      "ownerId": "r-2Qxi5YRmM",
+      "dueDate": "2029-05-01",
+      "status": "active",
+      "id": "v7BhzI69EeQ"
+    },
+    {
+      "name": "купить машину",
+      "description": "",
+      "ownerId": "969r0h2NT14",
+      "dueDate": "2027-05-02",
+      "status": "active",
+      "id": "IflD9JmB6Mc"
+    },
+    {
+      "name": "dv",
+      "description": "sv",
+      "ownerId": "969r0h2NT14",
+      "dueDate": "1999-05-05",
+      "status": "active",
+      "id": "kLPFzI_ZOIc"
+    },
+    {
+      "name": "ccc",
+      "description": "ccc",
+      "ownerId": "969r0h2NT14",
+      "dueDate": "2028-05-06",
+      "status": "active",
+      "id": "d8g4Xup6Ifs"
+    },
+    {
+      "name": "jj",
+      "description": "jj",
+      "ownerId": "969r0h2NT14",
+      "dueDate": "2028-02-02",
+      "status": "active",
+      "id": "hfvmSFlHSYQ"
+    },
+    {
+      "name": "oo",
+      "description": "oo",
+      "ownerId": "u4zAbC7dEf8",
+      "dueDate": "2028-02-02",
+      "status": "active",
+      "id": "MKTO73L6DbU"
+    },
+    {
+      "name": "1",
+      "description": "1",
+      "ownerId": "_02mOVSuzdo",
+      "dueDate": "1111-11-11",
+      "status": "active",
+      "id": "JYFnpd28ePs"
+    }
+  ],
+  "tasks": [
+    {
+      "title": "gfj",
+      "description": "fjg",
+      "status": "todo",
+      "projectId": "nSb_ZFwf7dQ",
+      "assignedUserId": "969r0h2NT14",
+      "dueDate": null,
+      "id": "4EDhxNUqo8c"
+    },
+    {
+      "title": "kjjk",
+      "description": "ll",
+      "status": "todo",
+      "projectId": null,
+      "assignedUserId": "owrX4H3QTm0",
+      "dueDate": null,
+      "id": "FulvMwVj6q8"
+    },
+    {
+      "title": "hkb",
+      "description": "ghlk",
+      "status": "done",
+      "projectId": null,
+      "assignedUserId": "owrX4H3QTm0",
+      "dueDate": null,
+      "id": "3KiDVCA_YH0"
+    },
+    {
+      "title": "meg",
+      "description": "mag",
+      "status": "todo",
+      "projectId": null,
+      "assignedUserId": "kTcn0xkjGnA",
+      "dueDate": null,
+      "id": "JCTn9ctXpu0"
+    },
+    {
+      "title": "hjju",
+      "description": "kjj",
+      "status": "todo",
+      "projectId": null,
+      "assignedUserId": "kTcn0xkjGnA",
+      "dueDate": null,
+      "id": "aKwKyMsFzJ0"
+    },
+    {
+      "title": "jj",
+      "description": "jj",
+      "status": "todo",
+      "projectId": null,
+      "assignedUserId": "kTcn0xkjGnA",
+      "dueDate": null,
+      "id": "s7B9YYJ2qKs"
+    },
+    {
+      "title": "купить землю",
+      "description": "не знаю пока кто",
+      "status": "todo",
+      "projectId": "v7BhzI69EeQ",
+      "assignedUserId": "",
+      "dueDate": null,
+      "id": "dY5ROb36AFU"
+    },
+    {
+      "title": "посмотреть цены audi",
+      "description": "",
+      "status": "done",
+      "projectId": "IflD9JmB6Mc",
+      "assignedUserId": "owrX4H3QTm0",
+      "dueDate": "2026-06-02",
+      "id": "zcJIGqQsmYk",
+      "completedAt": "2026-06-01"
+    },
+    {
+      "title": "dvdsv",
+      "description": "",
+      "status": "todo",
+      "projectId": "kLPFzI_ZOIc",
+      "assignedUserId": "owrX4H3QTm0",
+      "dueDate": "1111-02-16",
+      "id": "aRqMLVTBcck"
+    },
+    {
+      "title": "dsdbbsd",
+      "description": "",
+      "status": "todo",
+      "projectId": "d8g4Xup6Ifs",
+      "assignedUserId": "owrX4H3QTm0",
+      "dueDate": "2027-02-22",
+      "id": "NU2KZqhUPjA"
+    },
+    {
+      "title": ",njn",
+      "description": "",
+      "status": "todo",
+      "projectId": "hfvmSFlHSYQ",
+      "assignedUserId": "owrX4H3QTm0",
+      "dueDate": "2029-11-21",
+      "id": "3dGjY-iywP0"
+    },
+    {
+      "title": "dxcdv",
+      "description": "",
+      "status": "done",
+      "projectId": "MKTO73L6DbU",
+      "assignedUserId": "u4zAbC7dEf8",
+      "dueDate": "2028-02-02",
+      "id": "n0TZ5bp4g0c"
+    }
+  ],
+  "members": [
+    {
+      "projectId": "nSb_ZFwf7dQ",
+      "userId": "969r0h2NT14",
+      "role": "member",
+      "id": "n9s8N70wFtw"
+    },
+    {
+      "projectId": null,
+      "userId": "owrX4H3QTm0",
+      "role": "member",
+      "id": "eqAx52cKcZk"
+    },
+    {
+      "projectId": null,
+      "userId": "kTcn0xkjGnA",
+      "role": "member",
+      "id": "HXByjHAYKHo"
+    },
+    {
+      "projectId": "v7BhzI69EeQ",
+      "userId": "969r0h2NT14",
+      "role": "member",
+      "id": "pddGXTRVsTA"
+    }
+  ],
+  "friendships": [
+    {
+      "userId": "969r0h2NT14",
+      "friendId": "owrX4H3QTm0",
+      "id": "FA4423OQuPI"
+    }
+  ],
+  "invitations": [],
+  "$schema": "./node_modules/json-server/schema.json"
+}

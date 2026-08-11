@@ -1,0 +1,175 @@
+<div class="my-tasks">
+  <div class="page-header">
+    <div>
+      <h1>My Tasks</h1>
+      <p class="subtitle">Your personal workspace — track everything assigned to you.</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill warning" *ngIf="warningCount > 0">
+        <i class="ti ti-alert-triangle"></i> {{ warningCount }} warning
+      </div>
+      <div class="stat-pill expired" *ngIf="expiredCount > 0">
+        <i class="ti ti-clock-x"></i> {{ expiredCount }} expired
+      </div>
+      <div class="stat-pill green">{{ completedTasks.length }} done</div>
+      <div class="productivity-wrap">
+        <svg viewBox="0 0 36 36" width="48" height="48">
+          <circle cx="18" cy="18" r="15.9"
+            fill="none" stroke="#1e2235" stroke-width="3"/>
+          <circle cx="18" cy="18" r="15.9"
+            fill="none" stroke="var(--accent, #6c63ff)" stroke-width="3"
+            [attr.stroke-dasharray]="productivity + ', 100'"
+            stroke-dashoffset="25"
+            stroke-linecap="round"/>
+        </svg>
+        <span class="ring-pct">{{ productivity }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar" *ngIf="myTasks.length > 0">
+    <button class="filter-pill"
+            [class.active]="activeFilter === 'all'"
+            (click)="setFilter('all')">All</button>
+
+    <button class="filter-pill"
+            [class.active]="activeFilter === 'active'"
+            (click)="setFilter('active')">Active</button>
+
+    <button class="filter-pill warning-pill"
+            [class.active]="activeFilter === 'warning'"
+            (click)="setFilter('warning')">
+      <i class="ti ti-alert-triangle"></i>
+      Warning
+      <span class="pill-count" *ngIf="warningCount > 0">{{ warningCount }}</span>
+    </button>
+
+    <button class="filter-pill expired-pill"
+            [class.active]="activeFilter === 'expired'"
+            (click)="setFilter('expired')">
+      <i class="ti ti-clock-x"></i>
+      Expired
+      <span class="pill-count" *ngIf="expiredCount > 0">{{ expiredCount }}</span>
+    </button>
+
+    <button class="filter-pill"
+            [class.active]="activeFilter === 'completed'"
+            (click)="setFilter('completed')">
+      <i class="ti ti-circle-check"></i>
+      Completed
+      <span class="pill-count" *ngIf="completedTasks.length > 0">{{ completedTasks.length }}</span>
+    </button>
+  </div>
+
+  <!-- EMPTY STATE (no tasks at all) -->
+  <div class="empty-state" *ngIf="myTasks.length === 0">
+    <i class="ti ti-clipboard-check"></i>
+    <p>No tasks assigned to you yet.</p>
+    <span>Tasks assigned to you in any project will appear here.</span>
+  </div>
+
+  <!-- FILTERED TASK LIST (non-completed, sorted) -->
+  <div class="task-list" *ngIf="filteredTasks.length > 0">
+    <div class="task-row"
+         [class.state-warning]="getTaskState(task) === 'warning'"
+         [class.state-expired]="getTaskState(task) === 'expired'"
+         [class.state-paused]="isProjectPaused(task.projectId)"
+         *ngFor="let task of filteredTasks">
+
+      <!-- Checkbox -->
+      <div class="task-check"
+           [class.locked]="!canCompleteTask(task)"
+           (click)="toggleTask(task)"
+           [title]="getCheckboxTitle(task)">
+        <i class="ti ti-lock" *ngIf="!canCompleteTask(task)"></i>
+      </div>
+
+      <!-- Title -->
+      <span class="task-name">{{ task.title }}</span>
+
+      <!-- Meta: project + deadline -->
+      <div class="task-meta">
+        <!-- Project tag — clickable only when there is a real project -->
+        <span class="proj-tag"
+              [class.is-paused]="isProjectPaused(task.projectId)"
+              [class.no-link]="!task.projectId"
+              (click)="goToProject(task.projectId)">
+          <i class="ti ti-folder"></i>
+          {{ getProjectName(task.projectId) }}
+          <i class="ti ti-pause proj-pause-icon"
+             *ngIf="isProjectPaused(task.projectId)"
+             title="Project paused"></i>
+        </span>
+
+        <!-- Deadline badge -->
+        <span class="deadline-badge"
+              [class.state-none]="getTaskState(task) === 'none'"
+              [class.state-normal]="getTaskState(task) === 'normal'"
+              [class.state-warning]="getTaskState(task) === 'warning'"
+              [class.state-expired]="getTaskState(task) === 'expired'">
+          <i class="ti"
+             [class.ti-calendar-off]="getTaskState(task) === 'none'"
+             [class.ti-calendar]="getTaskState(task) === 'normal'"
+             [class.ti-alert-triangle]="getTaskState(task) === 'warning'"
+             [class.ti-clock-x]="getTaskState(task) === 'expired'"></i>
+          {{ getDeadlineLabel(task) }}
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="task-actions">
+        <button class="del-btn" *ngIf="canDeleteTask(task)"
+                (click)="deleteTask(task.id)" title="Delete">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY FILTER STATE -->
+  <div class="empty-filter"
+       *ngIf="myTasks.length > 0 && filteredTasks.length === 0 && (activeFilter !== 'completed' || completedTasks.length === 0)">
+    <i class="ti ti-filter-off"></i>
+    <span>{{ emptyFilterMessage }}</span>
+  </div>
+
+  <!-- COMPLETED ACCORDION -->
+  <div class="accordion-section"
+       *ngIf="completedTasks.length > 0 && (activeFilter === 'all' || activeFilter === 'completed')">
+    <div class="accordion-header" (click)="toggleCompleted()">
+      <i class="ti"
+         [class.ti-chevron-right]="!showCompleted"
+         [class.ti-chevron-down]="showCompleted"></i>
+      <span>Completed tasks ({{ completedTasks.length }})</span>
+      <div class="accordion-line"></div>
+    </div>
+
+    <div *ngIf="showCompleted">
+      <div class="task-row dimmed" *ngFor="let task of completedTasks">
+        <div class="task-check checked"
+             [class.locked]="!canCompleteTask(task)"
+             (click)="toggleTask(task)"
+             [title]="!canCompleteTask(task) ? getCheckboxTitle(task) : 'Mark as to-do'">
+          <i class="ti ti-check" *ngIf="canCompleteTask(task)"></i>
+          <i class="ti ti-lock"  *ngIf="!canCompleteTask(task)"></i>
+        </div>
+        <span class="task-name done">{{ task.title }}</span>
+        <div class="task-meta">
+          <span class="proj-tag"
+                [class.no-link]="!task.projectId"
+                (click)="goToProject(task.projectId)">
+            <i class="ti ti-folder"></i>
+            {{ getProjectName(task.projectId) }}
+          </span>
+        </div>
+        <div class="task-actions">
+          <span class="badge done">done</span>
+          <button class="del-btn" *ngIf="canDeleteTask(task)" (click)="deleteTask(task.id)" title="Delete">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

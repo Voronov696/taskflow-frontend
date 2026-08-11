@@ -1,0 +1,225 @@
+<div class="projects-page" (click)="closeMenu()">
+  <div class="page-header">
+    <div>
+      <h1>Projects</h1>
+      <p class="subtitle">{{ projectCards.length }} project{{ projectCards.length !== 1 ? 's' : '' }}</p>
+    </div>
+    <button class="btn-accent" (click)="openModal()">
+      <i class="ti ti-plus"></i> New Project
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input type="text" placeholder="Search projects…" [(ngModel)]="searchQuery" />
+    </div>
+    <div class="filter-tabs">
+      <button class="filter-tab" [class.active]="activeFilter === 'all'"    (click)="setFilter('all')">
+        All <span class="count">{{ projectCards.length }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'active'" (click)="setFilter('active')">
+        Active
+      </button>
+      <button class="filter-tab paused-tab" [class.active]="activeFilter === 'paused'" (click)="setFilter('paused')">
+        <i class="ti ti-pause"></i> Paused
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'done'"   (click)="setFilter('done')">
+        <i class="ti ti-circle-check"></i> Completed
+      </button>
+    </div>
+  </div>
+
+  <!-- SEARCH EMPTY STATE -->
+  <div class="empty-state" *ngIf="noResultsForSearch">
+    <i class="ti ti-search"></i>
+    <p>No projects match "{{ searchQuery }}"</p>
+  </div>
+
+  <!-- ACTIVE PROJECTS GRID -->
+  <div class="projects-grid" *ngIf="activeCards.length > 0">
+    <div class="project-card"
+         *ngFor="let card of activeCards; trackBy: trackByProjectId"
+         (click)="openProject(card.project.id)">
+      <div class="card-header">
+        <span class="card-name">{{ card.project.name }}</span>
+        <span class="status-tag active">Active</span>
+        <div class="menu-wrapper">
+          <button class="menu-btn" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+            <i class="ti ti-dots"></i>
+          </button>
+          <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
+            <div class="dropdown-item pause" (click)="pauseProject(card.project.id, $event)">
+              <i class="ti ti-pause"></i> Pause project
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item delete" (click)="deleteProject(card.project.id, $event)">
+              <i class="ti ti-trash"></i> Delete project
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
+      <div class="card-due" *ngIf="card.project.dueDate">
+        <i class="ti ti-calendar"></i> Due {{ card.project.dueDate | date:'dd MMM yyyy' }}
+      </div>
+      <div class="card-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="card.progress"></div>
+        </div>
+        <span class="progress-pct">{{ card.progress }}%</span>
+      </div>
+      <div class="card-footer">
+        <div class="task-info">
+          <i class="ti ti-checklist"></i>
+          {{ card.totalTasks }} tasks · {{ card.doneTasks }} done
+        </div>
+        <div class="avatars">
+          <div class="avatar" *ngFor="let initials of card.memberInitials">{{ initials }}</div>
+          <div class="avatar ghost" *ngIf="card.memberInitials.length === 0"><i class="ti ti-user"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="new-card" (click)="openModal()">
+      <i class="ti ti-plus"></i>
+      <span>New project</span>
+    </div>
+  </div>
+
+  <!-- EMPTY ACTIVE STATE -->
+  <div class="empty-state" *ngIf="activeCards.length === 0 && activeFilter === 'active' && !searchQuery">
+    <i class="ti ti-folder"></i>
+    <p>No active projects.</p>
+  </div>
+
+  <!-- PAUSED PROJECTS ACCORDION -->
+  <div class="paused-section"
+       *ngIf="pausedCards.length > 0 && (activeFilter === 'all' || activeFilter === 'paused')">
+    <div class="accordion-header" (click)="togglePausedProjects()">
+      <div class="accordion-left">
+        <i class="ti" [class.ti-chevron-right]="!showPausedProjects"
+           [class.ti-chevron-down]="showPausedProjects"></i>
+        <span>Paused Projects ({{ pausedCards.length }})</span>
+      </div>
+      <div class="accordion-line"></div>
+    </div>
+
+    <div class="projects-grid paused-grid" *ngIf="showPausedProjects">
+      <div class="project-card is-paused"
+           *ngFor="let card of pausedCards; trackBy: trackByProjectId"
+           (click)="openProject(card.project.id)">
+        <div class="card-header">
+          <span class="card-name">{{ card.project.name }}</span>
+          <span class="status-tag paused"><i class="ti ti-pause"></i> Paused</span>
+          <div class="menu-wrapper">
+            <button class="menu-btn" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+              <i class="ti ti-dots"></i>
+            </button>
+            <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
+              <div class="dropdown-item" (click)="unpauseProject(card.project.id, $event)">
+                <i class="ti ti-player-play"></i> Unpause project
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-item delete" (click)="deleteProject(card.project.id, $event)">
+                <i class="ti ti-trash"></i> Delete project
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
+        <div class="paused-notice">
+          <i class="ti ti-lock"></i> Task actions frozen — unpause to continue
+        </div>
+        <div class="card-progress">
+          <div class="progress-bar">
+            <div class="progress-fill paused" [style.width.%]="card.progress"></div>
+          </div>
+          <span class="progress-pct">{{ card.progress }}%</span>
+        </div>
+        <div class="card-footer">
+          <div class="task-info">
+            <i class="ti ti-checklist"></i>
+            {{ card.totalTasks }} tasks · {{ card.doneTasks }} done
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLETED PROJECTS ACCORDION -->
+  <div class="completed-section"
+       *ngIf="completedCards.length > 0 && (activeFilter === 'all' || activeFilter === 'done')">
+    <div class="accordion-header" (click)="toggleCompletedProjects()">
+      <div class="accordion-left">
+        <i class="ti" [class.ti-chevron-right]="!showCompletedProjects"
+           [class.ti-chevron-down]="showCompletedProjects"></i>
+        <span>Completed Projects ({{ completedCards.length }})</span>
+      </div>
+      <div class="accordion-line"></div>
+    </div>
+
+    <div class="projects-grid" *ngIf="showCompletedProjects">
+      <div class="project-card is-completed"
+           *ngFor="let card of completedCards; trackBy: trackByProjectId"
+           (click)="openProject(card.project.id)">
+        <div class="card-header">
+          <span class="card-name">{{ card.project.name }}</span>
+          <span class="status-tag done">Completed</span>
+          <div class="menu-wrapper">
+            <button class="menu-btn" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+              <i class="ti ti-dots"></i>
+            </button>
+            <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
+              <div class="dropdown-item delete" (click)="deleteProject(card.project.id, $event)">
+                <i class="ti ti-trash"></i> Delete project
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
+        <div class="card-due" *ngIf="card.project.dueDate">
+          <i class="ti ti-calendar"></i> Due {{ card.project.dueDate | date:'dd MMM yyyy' }}
+        </div>
+        <div class="card-progress">
+          <div class="progress-bar">
+            <div class="progress-fill full" [style.width.%]="card.progress"></div>
+          </div>
+          <span class="progress-pct">{{ card.progress }}%</span>
+        </div>
+        <div class="card-footer">
+          <div class="task-info">
+            <i class="ti ti-checklist"></i>
+            {{ card.totalTasks }} tasks · {{ card.doneTasks }} done
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PROJECT MODAL -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h2>New Project</h2>
+    <div class="modal-field">
+      <label>Project name</label>
+      <input class="input" type="text" placeholder="e.g. Build a Car" [(ngModel)]="newProjectName" />
+    </div>
+    <div class="modal-field">
+      <label>Description <span class="optional">— optional</span></label>
+      <input class="input" type="text" placeholder="What is this project about?" [(ngModel)]="newProjectDescription" />
+    </div>
+    <div class="modal-field">
+      <label>Due date <span class="optional">— optional</span></label>
+      <div class="date-wrap">
+        <i class="ti ti-calendar cal-icon"></i>
+        <input class="input" type="date" [(ngModel)]="newProjectDueDate" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" (click)="closeModal()">Cancel</button>
+      <button class="btn-accent" (click)="createProject()">Create</button>
+    </div>
+  </div>
+</div>

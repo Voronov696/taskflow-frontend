@@ -1,0 +1,99 @@
+/* You can add global styles to this file, and also import other style files */
+
+/*html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }*/
+@import '@tabler/icons-webfont/dist/tabler-icons.css';
+
+
+html {
+  font-size: 18px;
+}
+
+@media (min-width: 1400px) {
+  html { font-size: 19px; }
+}
+
+@media (max-width: 1024px) {
+  html { font-size: 16px; }
+}
+
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+}
+:root {
+  --accent: #6c63ff;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #0f1117;
+  font-family: 'Roboto', sans-serif;
+  color: #e0e0e0;
+}
+
+* { box-sizing: border-box; }
+
+/* ── Date input global polish ─────────────────────────────────────────────── */
+input[type="date"] {
+  color-scheme: dark;
+
+  /* Calendar picker icon — tinted to match the accent on hover */
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.45;
+    border-radius: 4px;
+    padding: 3px;
+    margin-left: 2px;
+    transition: opacity 0.2s, filter 0.2s;
+
+    &:hover {
+      opacity: 1;
+      /* invert(1) → black, then sepia+saturate+hue-rotate → accent purple */
+      filter: invert(1) sepia(1) saturate(4) hue-rotate(210deg) brightness(1.3);
+    }
+  }
+
+  /* Date-part separator characters (/, -, .) */
+  &::-webkit-datetime-edit-text {
+    color: #4a4d5e;
+    padding: 0 1px;
+  }
+
+  /* Highlight the active date segment with accent background */
+  &::-webkit-datetime-edit-day-field:focus,
+  &::-webkit-datetime-edit-month-field:focus,
+  &::-webkit-datetime-edit-year-field:focus {
+    background-color: rgba(108, 99, 255, 0.25);
+    border-radius: 2px;
+    color: #fff;
+    outline: none;
+  }
+}
+
+/* ── Date-wrap: styled container that adds a left calendar icon ────────────── */
+.date-wrap {
+  position: relative;
+  display: block;
+
+  .cal-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent, #6c63ff);
+    font-size: 15px;
+    pointer-events: none;
+    opacity: 0.65;
+    transition: opacity 0.15s;
+  }
+
+  &:focus-within .cal-icon { opacity: 1; }
+
+  input[type="date"] {
+    padding-left: 38px !important;
+    width: 100%;
+  }
+}

@@ -1,0 +1,211 @@
+.my-tasks {
+  padding: 28px 32px;
+  width: 100%;
+
+  .page-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 28px;
+    h1 { color: #fff; font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { color: #6b6f8a; font-size: 13px; }
+  }
+
+  .header-stats {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+}
+
+.stat-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #181b2e; border: 1px solid #1e2235;
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; color: #6b6f8a;
+  white-space: nowrap;
+  i { font-size: 12px; }
+  &.green   { color: #10b981; border-color: rgba(16,185,129,.2); }
+  &.warning { color: #f59e0b; border-color: rgba(245,158,11,.2); background: rgba(245,158,11,.06); }
+  &.expired { color: #ef4444; border-color: rgba(239,68,68,.2);  background: rgba(239,68,68,.06); }
+}
+
+/* ── Filter bar ──────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;
+}
+
+.filter-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #181b2e; border: 1px solid #1e2235;
+  color: #6b6f8a; font-size: 12px; font-weight: 500;
+  padding: 5px 12px; border-radius: 20px; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+  i { font-size: 12px; }
+
+  &:hover { border-color: #3a3d52; color: #e0e0e0; }
+
+  &.active {
+    background: rgba(108,99,255,.12);
+    border-color: rgba(108,99,255,.35);
+    color: var(--accent, #6c63ff);
+  }
+
+  &.warning-pill:hover, &.warning-pill.active {
+    background: rgba(245,158,11,.1); border-color: rgba(245,158,11,.35); color: #f59e0b;
+  }
+
+  &.expired-pill:hover, &.expired-pill.active {
+    background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.35); color: #ef4444;
+  }
+
+  .pill-count {
+    background: rgba(255,255,255,.08);
+    padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 600;
+  }
+}
+
+/* ── Task list ───────────────────────────────────────────────────────────── */
+.task-list { display: flex; flex-direction: column; }
+
+.productivity-wrap {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px;
+  svg { position: absolute; }
+  .ring-pct { position: relative; font-size: 11px; font-weight: 600; color: #fff; }
+}
+
+.empty-filter {
+  display: flex; align-items: center; gap: 10px;
+  color: #6b6f8a; font-size: 13px; padding: 28px 4px;
+  i { font-size: 20px; color: #2a2d3e; flex-shrink: 0; }
+}
+
+/* ── Task row ────────────────────────────────────────────────────────────── */
+.task-row {
+  background: #181b2e; border: 1px solid #1e2235;
+  border-radius: 9px; padding: 11px 16px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover { border-color: var(--accent, #6c63ff); }
+  &:hover .del-btn { opacity: 1; }
+
+  /* Warning state */
+  &.state-warning {
+    border-color: rgba(245, 158, 11, 0.45);
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12), 0 4px 16px rgba(245, 158, 11, 0.06);
+    &:hover { border-color: rgba(245, 158, 11, 0.7); }
+  }
+
+  /* Expired state */
+  &.state-expired {
+    border-color: rgba(239, 68, 68, 0.45);
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.12), 0 4px 16px rgba(239, 68, 68, 0.06);
+    &:hover { border-color: rgba(239, 68, 68, 0.7); }
+  }
+
+  /* Paused project — muted amber tint, desaturated */
+  &.state-paused {
+    border-color: rgba(245, 158, 11, 0.2);
+    opacity: 0.75;
+    filter: saturate(0.7);
+    &:hover { opacity: 0.9; filter: saturate(0.9); border-color: rgba(245, 158, 11, 0.35); }
+  }
+
+  &.dimmed {
+    opacity: 0.45;
+    &:hover { opacity: 0.7; border-color: #1e2235; box-shadow: none; }
+  }
+
+  .task-check {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid #3a3d52;
+    flex-shrink: 0; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all 0.15s; color: #fff; font-size: 11px;
+    &:hover { border-color: var(--accent, #6c63ff); }
+    &.checked { background: var(--accent, #6c63ff); border-color: var(--accent, #6c63ff); }
+    &.locked {
+      border-color: rgba(239, 68, 68, 0.4); cursor: not-allowed;
+      color: rgba(239, 68, 68, 0.6); font-size: 10px;
+      &:hover { border-color: rgba(239, 68, 68, 0.6); }
+    }
+  }
+
+  .task-name {
+    flex: 1; color: #e0e0e0; font-size: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    &.done { text-decoration: line-through; color: #3a3d52; }
+  }
+
+  .task-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+  .proj-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(108,99,255,.1); border: 1px solid rgba(108,99,255,.2);
+    color: #a09af5; font-size: 11px; font-weight: 500;
+    padding: 3px 8px; border-radius: 6px; cursor: pointer;
+    transition: background 0.15s; white-space: nowrap;
+    i { font-size: 12px; }
+    &:hover { background: rgba(108,99,255,.2); }
+
+    /* Personal task — no navigation */
+    &.no-link { cursor: default;
+      &:hover { background: rgba(108,99,255,.1); } }
+
+    /* Paused project indicator */
+    &.is-paused {
+      background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.25);
+      color: #a07828;
+      &:hover { background: rgba(245,158,11,.14); }
+      .proj-pause-icon { color: #f59e0b; font-size: 10px; }
+    }
+  }
+
+  .task-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+}
+
+/* ── Deadline badge ───────────────────────────────────────────────────────── */
+.deadline-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 10px;
+  white-space: nowrap;
+  i { font-size: 11px; }
+  &.state-none    { background: rgba(107,111,138,.12); color: #6b6f8a; }
+  &.state-normal  { background: rgba(16,185,129,.10);  color: #10b981; }
+  &.state-warning { background: rgba(245,158,11,.12);  color: #f59e0b; }
+  &.state-expired { background: rgba(239,68,68,.12);   color: #ef4444; }
+}
+
+/* ── Misc ────────────────────────────────────────────────────────────────── */
+.del-btn {
+  background: transparent; border: none; color: #3a3d52;
+  cursor: pointer; font-size: 15px; padding: 3px; border-radius: 5px;
+  display: flex; align-items: center; transition: color 0.15s; opacity: 0;
+  &:hover { color: #ef4444; }
+}
+
+.badge {
+  font-size: 10px; padding: 3px 8px; border-radius: 8px; flex-shrink: 0; font-weight: 500;
+  &.todo { background: rgba(245,158,11,.12); color: #f59e0b; }
+  &.prog { background: rgba(108,99,255,.12); color: var(--accent, #6c63ff); }
+  &.done { background: rgba(16,185,129,.12); color: #10b981; }
+}
+
+.accordion-section { margin-top: 8px; }
+
+.accordion-header {
+  display: flex; align-items: center; gap: 8px; padding: 8px 0;
+  cursor: pointer; color: #6b6f8a; font-size: 12px; transition: color 0.15s;
+  i { font-size: 13px; }
+  &:hover { color: #e0e0e0; }
+  .accordion-line { flex: 1; height: 1px; background: #1e2235; }
+}
+
+.empty-state {
+  text-align: center; padding: 80px 40px; color: #3a3d52;
+  i { font-size: 44px; display: block; margin-bottom: 16px; }
+  p { color: #8b8fa8; font-size: 15px; margin-bottom: 4px; }
+  span { font-size: 13px; color: #6b6f8a; }
+}
+
+@media (max-width: 768px) {
+  .my-tasks { padding: 16px; }
+  .page-header { flex-direction: column; gap: 16px; }
+  .header-stats { align-self: flex-start; flex-wrap: wrap; }
+  .task-meta { display: none; }
+}

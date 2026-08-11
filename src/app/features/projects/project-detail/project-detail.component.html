@@ -1,0 +1,231 @@
+<div class="detail-page">
+
+  <div class="breadcrumb" (click)="goBack()">
+    <i class="ti ti-arrow-left"></i> Back to Projects
+  </div>
+
+  <div class="page-header">
+    <div class="header-info">
+      <h1>{{ project?.name }}</h1>
+      <p class="description">{{ project?.description }}</p>
+    </div>
+  </div>
+
+  <!-- PAUSED BANNER -->
+  <div class="paused-banner" *ngIf="isPaused">
+    <div class="paused-banner-left">
+      <i class="ti ti-pause"></i>
+      <div>
+        <strong>Project paused</strong>
+        <span>All task actions are frozen. Task due dates have been cleared.</span>
+      </div>
+    </div>
+    <button class="btn-unpause" *ngIf="isOwner" (click)="unpauseFromDetail()">
+      <i class="ti ti-player-play"></i> Unpause
+    </button>
+  </div>
+
+  <!-- INLINE TASK CREATION (owner only, not paused) -->
+  <div class="inline-create" *ngIf="isOwner && !isPaused">
+    <div class="inline-row">
+      <input
+        class="inline-input title-input"
+        type="text"
+        placeholder="New task name…"
+        [(ngModel)]="inlineTaskTitle"
+        (keydown)="onInlineKeydown($event)" />
+      <input
+        class="inline-input date-input"
+        type="date"
+        [(ngModel)]="inlineTaskDueDate"
+        (keydown)="onInlineKeydown($event)"
+        title="Due date (required)" />
+      <select
+        class="inline-input assignee-select"
+        [(ngModel)]="inlineTaskAssigneeId"
+        (keydown)="onInlineKeydown($event)">
+        <option value="">Unassigned</option>
+        <option [value]="currentUser?.id">{{ currentUser?.name }} (You)</option>
+        <option *ngFor="let f of friends" [value]="f.id">{{ f.name }}</option>
+      </select>
+      <button
+        class="inline-add-btn"
+        (click)="createInlineTask()"
+        [disabled]="!inlineTaskTitle.trim() || !inlineTaskDueDate"
+        title="Add task (Enter)">
+        <i class="ti ti-plus"></i>
+      </button>
+    </div>
+    <span class="inline-error" *ngIf="inlineError">
+      <i class="ti ti-alert-circle"></i> {{ inlineError }}
+    </span>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar" *ngIf="tasks.length > 0">
+    <button class="filter-pill"
+            [class.active]="activeFilter === 'all'"
+            (click)="setFilter('all')">All</button>
+
+    <button class="filter-pill"
+            [class.active]="activeFilter === 'active'"
+            (click)="setFilter('active')">Active</button>
+
+    <button class="filter-pill warning-pill"
+            [class.active]="activeFilter === 'warning'"
+            (click)="setFilter('warning')">
+      <i class="ti ti-alert-triangle"></i>
+      Warning
+      <span class="pill-count" *ngIf="warningCount > 0">{{ warningCount }}</span>
+    </button>
+
+    <button class="filter-pill expired-pill"
+            [class.active]="activeFilter === 'expired'"
+            (click)="setFilter('expired')">
+      <i class="ti ti-clock-x"></i>
+      Expired
+      <span class="pill-count" *ngIf="expiredCount > 0">{{ expiredCount }}</span>
+    </button>
+
+    <button class="filter-pill"
+            [class.active]="activeFilter === 'completed'"
+            (click)="setFilter('completed')">
+      <i class="ti ti-circle-check"></i>
+      Completed
+      <span class="pill-count" *ngIf="completedTasks.length > 0">{{ completedTasks.length }}</span>
+    </button>
+  </div>
+
+  <!-- ACTIVE TASKS (sorted + filtered) -->
+  <div class="task-list" *ngIf="filteredActiveTasks.length > 0">
+    <div class="task-card"
+         [class.state-warning]="getTaskState(task) === 'warning'"
+         [class.state-expired]="getTaskState(task) === 'expired'"
+         *ngFor="let task of filteredActiveTasks">
+
+      <div class="task-main">
+        <div class="checkbox"
+             [class.checked]="task.status === 'done'"
+             [class.locked]="!canComplete(task)"
+             (click)="toggleStatus(task)"
+             [title]="!canComplete(task) ? 'Deadline expired — cannot complete' : (task.status === 'done' ? 'Mark as to-do' : 'Mark as done')">
+          <i class="ti ti-check" *ngIf="task.status === 'done'"></i>
+          <i class="ti ti-lock"  *ngIf="!canComplete(task) && task.status !== 'done'"></i>
+        </div>
+
+        <div class="task-info">
+          <strong>{{ task.title }}</strong>
+          <div class="task-meta-row">
+            <span class="assignee" *ngIf="task.assignedUserId">
+              <i class="ti ti-user"></i>
+              {{ getMemberName(task.assignedUserId) }}
+            </span>
+            <span class="deadline-badge"
+                  [class.state-none]="getTaskState(task) === 'none'"
+                  [class.state-normal]="getTaskState(task) === 'normal'"
+                  [class.state-warning]="getTaskState(task) === 'warning'"
+                  [class.state-expired]="getTaskState(task) === 'expired'">
+              <i class="ti"
+                 [class.ti-calendar-off]="getTaskState(task) === 'none'"
+                 [class.ti-calendar]="getTaskState(task) === 'normal'"
+                 [class.ti-alert-triangle]="getTaskState(task) === 'warning'"
+                 [class.ti-clock-x]="getTaskState(task) === 'expired'"></i>
+              {{ getDeadlineLabel(task) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="task-side">
+          <button class="edit-btn"
+                  *ngIf="isOwner && !isPaused && editingTaskId !== task.id"
+                  (click)="startEdit(task)"
+                  title="Edit due date / assignee">
+            <i class="ti ti-pencil"></i>
+          </button>
+          <button class="delete-task-btn"
+                  *ngIf="canDeleteTask(task)"
+                  (click)="deleteTask(task.id)"
+                  title="Delete task">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Inline edit row (owner only) -->
+      <div class="edit-row" *ngIf="editingTaskId === task.id && isOwner">
+        <input class="edit-field" type="date"
+               [(ngModel)]="editDueDate" title="New due date" />
+        <select class="edit-field" [(ngModel)]="editAssigneeId">
+          <option value="">Unassigned</option>
+          <option [value]="currentUser?.id">{{ currentUser?.name }} (You)</option>
+          <option *ngFor="let f of friends" [value]="f.id">{{ f.name }}</option>
+        </select>
+        <button class="btn-save" (click)="saveEdit(task)">
+          <i class="ti ti-check"></i> Save
+        </button>
+        <button class="btn-cancel" (click)="cancelEdit()">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-hint"
+       *ngIf="filteredActiveTasks.length === 0 && activeFilter !== 'completed'">
+    <i class="ti ti-clipboard"></i>
+    <span>{{ emptyFilterMessage }}</span>
+    <span class="empty-sub" *ngIf="tasks.length === 0 && isOwner">
+      Use the row above to add your first task.
+    </span>
+  </div>
+
+  <!-- COMPLETED ACCORDION -->
+  <div class="completed-section" *ngIf="completedTasks.length > 0">
+    <div class="accordion-header" (click)="toggleCompleted()">
+      <div class="accordion-left">
+        <i class="ti"
+           [class.ti-chevron-right]="!showCompleted"
+           [class.ti-chevron-down]="showCompleted"></i>
+        <span>Completed ({{ completedTasks.length }})</span>
+      </div>
+      <div class="accordion-line"></div>
+    </div>
+
+    <div class="completed-list" *ngIf="showCompleted">
+      <div class="task-card completed" *ngFor="let task of completedTasks">
+        <div class="task-main">
+          <div class="checkbox checked"
+               [class.locked]="!canComplete(task)"
+               (click)="toggleStatus(task)"
+               [title]="!canComplete(task) ? (isPaused ? 'Project is paused — actions frozen' : 'Deadline expired — cannot undo') : 'Mark as to-do'">
+            <i class="ti ti-check" *ngIf="canComplete(task)"></i>
+            <i class="ti ti-lock"  *ngIf="!canComplete(task)"></i>
+          </div>
+          <div class="task-info">
+            <strong class="done">{{ task.title }}</strong>
+            <div class="task-meta-row">
+              <span class="assignee" *ngIf="task.assignedUserId">
+                <i class="ti ti-user"></i>
+                {{ getMemberName(task.assignedUserId) }}
+              </span>
+            </div>
+          </div>
+          <div class="task-side">
+            <span class="badge done">done</span>
+            <button class="delete-task-btn" *ngIf="isOwner"
+                    (click)="deleteTask(task.id)" title="Delete task">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY COMPLETED STATE (when completed filter active but no completed tasks) -->
+  <div class="empty-hint" *ngIf="activeFilter === 'completed' && completedTasks.length === 0">
+    <i class="ti ti-clipboard-check"></i>
+    <span>No completed tasks yet.</span>
+  </div>
+
+</div>

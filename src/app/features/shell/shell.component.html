@@ -1,0 +1,65 @@
+<div class="app-shell">
+  <div class="mobile-topbar">
+    <button class="hamburger" (click)="toggleSidebar()">
+      <i class="ti ti-menu-2"></i>
+    </button>
+    <span class="mobile-logo">TaskFlow</span>
+  </div>
+
+  <div class="sidebar-overlay"
+       *ngIf="isSidebarOpen"
+       (click)="toggleSidebar()">
+  </div>
+
+  <aside class="sidebar" [class.open]="isSidebarOpen">
+    <div class="logo">
+      <div class="logo-icon">
+        <i class="ti ti-layout-kanban" aria-hidden="true"></i>
+      </div>
+      <span class="logo-text">TaskFlow</span>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section-label">Main</div>
+      <div
+        *ngFor="let item of navItems"
+        class="nav-item"
+        [class.active]="isActive(item.route)"
+        (click)="navigateTo(item.route); isSidebarOpen = false">
+        <i class="ti {{ item.icon }}" aria-hidden="true"></i>
+        <span>{{ item.label }}</span>
+      </div>
+    </nav>
+
+    <div class="nav-bottom">
+      <div class="nav-section-label">Account</div>
+      <div class="nav-item" (click)="navigateTo('settings'); isSidebarOpen = false">
+        <i class="ti ti-settings" aria-hidden="true"></i>
+        <span>Settings</span>
+      </div>
+
+      <div class="user-section" (click)="toggleUserMenu()">
+        <div class="avatar">{{ initials }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ currentUser?.name }}</span>
+          <span class="user-role">Member</span>
+        </div>
+        <i class="ti ti-chevron-up" aria-hidden="true"
+           [style.transform]="showUserMenu ? 'rotate(180deg)' : 'rotate(0)'"></i>
+      </div>
+
+      <div class="user-menu" *ngIf="showUserMenu">
+        <div class="menu-item" (click)="navigateTo('settings')">
+          <i class="ti ti-user" aria-hidden="true"></i> Profile
+        </div>
+        <div class="menu-item logout" (click)="logout()">
+          <i class="ti ti-logout" aria-hidden="true"></i> Log out
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>

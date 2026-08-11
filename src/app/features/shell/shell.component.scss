@@ -1,0 +1,206 @@
+.app-shell {
+  display: flex;
+  width: calc(100vw / 1.4);
+  height: calc(100vh / 1.4);
+  overflow: hidden;
+  background: #0f1117;
+  zoom: 1.4;
+}
+
+.sidebar {
+  width: 220px;
+  height: 100%;
+  background: #13151f;
+  border-right: 1px solid #1e2235;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  border-bottom: 1px solid #1e2235;
+  flex-shrink: 0;
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px;
+  }
+
+  .logo-text { color: #fff; font-size: 16px; font-weight: 500; }
+}
+
+.nav {
+  padding: 16px 0 8px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #2a2d3e; border-radius: 3px; }
+}
+
+.nav-section-label {
+  font-size: 10px;
+  color: #3a3d52;
+  padding: 0 16px;
+  margin-bottom: 4px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  color: #6b6f8a;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-right: 2px solid transparent;
+  margin: 1px 0;
+
+  i { font-size: 17px; }
+
+  &:hover { color: #e0e0e0; background: #1a1c28; }
+
+  &.active {
+    color: #fff;
+    background: #1e2235;
+    border-right-color: var(--accent);
+  }
+}
+
+.nav-bottom {
+  border-top: 1px solid #1e2235;
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 4px;
+
+  &:hover { background: #1a1c28; }
+
+  i {
+    font-size: 14px;
+    color: #3a3d52;
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+}
+
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 12px; font-weight: 500; flex-shrink: 0;
+}
+
+.user-info {
+  display: flex; flex-direction: column;
+  .user-name { color: #e0e0e0; font-size: 13px; font-weight: 500; }
+  .user-role { color: #3a3d52; font-size: 11px; }
+}
+
+.user-menu {
+  background: #1e2235;
+  border: 1px solid #2a2d3e;
+  border-radius: 8px;
+  margin: 4px 10px;
+  overflow: hidden;
+
+  .menu-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    color: #6b6f8a; font-size: 13px; cursor: pointer;
+    transition: background 0.15s;
+    i { font-size: 15px; }
+    &:hover { background: #2a2d3e; color: #e0e0e0; }
+    &.logout {
+      border-top: 1px solid #2a2d3e;
+      color: #ef4444;
+      &:hover { background: #2a0a0a; }
+    }
+  }
+}
+
+.main-content {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  background: #0f1117;
+  min-width: 0;
+}
+
+.mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #13151f;
+  border-bottom: 1px solid #1e2235;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+
+  .hamburger {
+    background: transparent; border: none;
+    color: #6b6f8a; cursor: pointer; font-size: 20px;
+    padding: 4px; display: flex; align-items: center;
+  }
+
+  .mobile-logo { color: #fff; font-size: 16px; font-weight: 500; }
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 99;
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    zoom: 1;
+  }
+
+  .mobile-topbar { display: flex; }
+
+  .sidebar {
+    position: fixed;
+    top: 0; left: -220px;
+    height: 100vh;
+    z-index: 200;
+    transition: left 0.25s ease;
+    &.open { left: 0; }
+  }
+
+  .sidebar-overlay { display: block; }
+
+  .main-content {
+    margin-top: 48px;
+    width: 100%;
+    height: calc(100vh - 48px);
+  }
+}
