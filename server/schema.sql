@@ -52,3 +52,14 @@ CREATE TABLE IF NOT EXISTS members (
   user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   role       TEXT NOT NULL
 );
+
+-- ===================== FRIENDSHIPS =====================
+-- Дружба между пользователями. Одна строка = одна связь; направление
+-- хранится (user_id — инициатор, friend_id — кого добавили), но фронт
+-- (friendship.service.ts) трактует дружбу как симметричную и сам
+-- проверяет обе стороны.
+CREATE TABLE IF NOT EXISTS friendships (
+  id        TEXT PRIMARY KEY,
+  user_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  friend_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+);

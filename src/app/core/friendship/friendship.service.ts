@@ -61,12 +61,16 @@ export class FriendshipService {
 
     return forkJoin([
       this.repo.searchByName(trimmed).pipe(catchError(() => of([]))),
-      this.repo.searchByEmail(trimmed).pipe(catchError(() => of([])))
+      this.repo.searchByEmail(trimmed).pipe(catchError(() => of([]))),
+      // Exact id match. GET /users/:id 404s when the id doesn't exist —
+      // that's not a real search failure, just "no match this way",
+      // so it's swallowed into an empty array like the other two sources.
+      this.repo.searchById(trimmed).pipe(catchError(() => of([])))
     ]).pipe(
-      switchMap(([byName, byEmail]) => {
+      switchMap(([byName, byEmail, byId]) => {
         // Deduplicate by id, exclude self
         const seen = new Set<string>();
-        const candidates = [...byName, ...byEmail].filter(u => {
+        const candidates = [...byName, ...byEmail, ...byId].filter(u => {
           if (u.id === currentUserId) return false;
           if (seen.has(u.id)) return false;
           seen.add(u.id);

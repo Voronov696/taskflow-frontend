@@ -49,6 +49,16 @@ export class FriendshipRepository {
     );
   }
 
+  /**
+   * Exact search by user id — GET /users/:id. Returns an array of 0 or 1
+   * users so it slots into searchUser() the same way as searchByName/
+   * searchByEmail (which also return arrays); a non-existent id gives a
+   * 404 from the server, which the caller is expected to catch.
+   */
+  searchById(id: string): Observable<User[]> {
+    return this.getUserById(id).pipe(map(user => [user]));
+  }
+
   getUserById(id: string): Observable<User> {
     return this.http.get<User>(`${this.api}/users/${id}`);
   }

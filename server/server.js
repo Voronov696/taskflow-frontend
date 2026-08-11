@@ -278,6 +278,31 @@ app.get('/members', authenticateToken, async (req, res) => {
   }
 });
 
+// ===================== FRIENDSHIPS: столбцы и SELECT =====================
+
+const FRIENDSHIP_COLUMNS = {
+  userId: 'user_id',
+  friendId: 'friend_id',
+};
+const FRIENDSHIP_FILTER_COLUMNS = { id: 'id', ...FRIENDSHIP_COLUMNS };
+
+const FRIENDSHIPS_SELECT = `id, user_id AS "userId", friend_id AS "friendId"`;
+
+// GET /friendships — поддерживает GET /friendships?userId=X (записи, где
+// X — инициатор) и GET /friendships?friendId=X (записи, где X добавили) —
+// friendship.repository.ts дергает оба варианта отдельно и объединяет
+// результат на фронте (см. friendship.service.ts, getAllFriendships()).
+app.get('/friendships', authenticateToken, async (req, res) => {
+  try {
+    const { whereSql, params } = buildWhereClause(req.query, FRIENDSHIP_FILTER_COLUMNS);
+    const result = await query(`SELECT ${FRIENDSHIPS_SELECT} FROM friendships${whereSql}`, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Не удалось получить список друзей' });
+  }
+});
+
 // ===================== USERS: запись (PostgreSQL) =====================
 
 // POST /users — создать нового юзера.
@@ -735,6 +760,45 @@ app.delete('/members/:id', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Не удалось удалить участника' });
+  }
+});
+
+// ===================== FRIENDSHIPS: запись (PostgreSQL) =====================
+
+// POST /friendships — создать новую дружбу.
+app.post('/friendships', authenticateToken, async (req, res) => {
+  try {
+    const newFriendship = {
+      id: generateId(),
+      userId: req.body.userId,
+      friendId: req.body.friendId,
+    };
+    const result = await query(
+      `INSERT INTO friendships (id, user_id, friend_id)
+       VALUES ($1, $2, $3)
+       RETURNING ${FRIENDSHIPS_SELECT}`,
+      [newFriendship.id, newFriendship.userId, newFriendship.friendId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Не удалось добавить друга' });
+  }
+});
+
+// DELETE /friendships/:id — удалить дружбу по id записи.
+app.delete('/friendships/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await query('DELETE FROM friendships WHERE id = $1 RETURNING id', [
+      req.params.id,
+    ]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Запись о дружбе не найдена' });
+    }
+    res.json({});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Не удалось удалить друга' });
   }
 });
 
