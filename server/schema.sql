@@ -29,28 +29,34 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 
 -- ===================== TASKS =====================
--- Задачи. Могут быть "ничьи" и по проекту (project_id = null), и по
--- исполнителю (assigned_user_id = null) — задачу можно создать без
--- назначенного пользователя. ON DELETE SET NULL у assigned_user_id:
--- при удалении юзера его задачи не удаляются, а просто отвязываются.
+-- Задачи. Могут быть "ничьи" по исполнителю (assigned_user_id = null) —
+-- задачу можно создать без назначенного пользователя. ON DELETE SET NULL
+-- у assigned_user_id: при удалении юзера его задачи не удаляются, а просто
+-- отвязываются. А вот project_id — ON DELETE CASCADE (см. миграцию 011):
+-- задача без проекта осиротела бы навсегда в Мои задачи/дашборде у своего
+-- исполнителя, хотя самого проекта уже нет — поэтому при удалении проекта
+-- удаляются и все его задачи, а не просто отвязываются.
 CREATE TABLE IF NOT EXISTS tasks (
   id               TEXT PRIMARY KEY,
   title            TEXT NOT NULL,
   description      TEXT NOT NULL,
   status           TEXT NOT NULL,
-  project_id       TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  project_id       TEXT REFERENCES projects(id) ON DELETE CASCADE,
   assigned_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  due_date         DATE,                      -- срок задачи, необязательный (см. миграцию 009)
   completed_at     DATE                       -- дата перехода в 'done', NULL пока не завершена
 );
 
 -- ===================== MEMBERS =====================
 -- Участие пользователя в проекте (кто в каком проекте состоит и в какой роли).
--- project_id тоже бывает null в db.json — допускаем NULL.
+-- project_id — ON DELETE CASCADE (см. миграцию 011): при удалении проекта
+-- участие в нём тоже теряет смысл, а не остаётся сиротской записью с
+-- project_id = NULL.
 CREATE TABLE IF NOT EXISTS members (
   id         TEXT PRIMARY KEY,
-  project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
   user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  role       TEXT NOT NULL
+  role       TEXT NOT NULL DEFAULT 'member' -- 'owner' | 'member'
 );
 
 -- ===================== FRIENDSHIPS =====================

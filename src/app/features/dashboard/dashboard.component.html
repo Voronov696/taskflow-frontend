@@ -184,6 +184,39 @@
           <span class="mini-badge">todo</span>
         </div>
       </div>
+
+      <!-- UPCOMING DEADLINES WIDGET (Part 2C of the spec) -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Upcoming deadlines</span>
+        </div>
+
+        <div class="empty-state small" *ngIf="upcomingDeadlines.length === 0">
+          No upcoming deadlines 🎉
+        </div>
+
+        <div class="deadline-row"
+             *ngFor="let item of upcomingDeadlines"
+             (click)="goToDeadlineItem(item)">
+          <span class="deadline-dot"
+                [class.soon]="item.urgency === 'soon'"
+                [class.urgent]="item.urgency === 'urgent'"
+                [class.overdue]="item.urgency === 'overdue'"></span>
+          <div class="deadline-info">
+            <span class="deadline-title">{{ item.title }}</span>
+            <span class="deadline-sub">
+              <i class="ti" [class.ti-checklist]="item.kind === 'task'" [class.ti-folder]="item.kind === 'project'"></i>
+              {{ item.kind === 'task' ? item.projectName : 'Project' }}
+            </span>
+          </div>
+          <span class="deadline-when"
+                [class.soon]="item.urgency === 'soon'"
+                [class.urgent]="item.urgency === 'urgent'"
+                [class.overdue]="item.urgency === 'overdue'">
+            {{ getDeadlineUrgencyLabel(item) }}
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

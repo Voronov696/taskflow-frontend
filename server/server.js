@@ -77,6 +77,32 @@ function generateId() {
   return crypto.randomBytes(8).toString('base64url');
 }
 
+// Добавляет юзера в members данного проекта с указанной ролью, если
+// такой записи ещё нет. Используется для автопривязки исполнителя
+// задачи к проекту (POST/PATCH /tasks) — если человеку назначили
+// вторую задачу в том же проекте, повторного INSERT'а быть не должно,
+// поэтому сначала проверяем существование, а не полагаемся на UNIQUE
+// в схеме (его там и нет — members допускает произвольное число ролей
+// на пару project_id/user_id, если это когда-нибудь понадобится).
+//
+// Не обёрнуто в транзакцию — в этом кодовом стиле (db.js/server.js)
+// транзакции нигде больше не используются, pool.query() вызывается
+// как есть. Держим тот же стиль, а не вводим новый паттерн ради одного
+// места; в худшем случае при сбое между SELECT и INSERT участник
+// временно не попадёт в members — не хуже, чем полное отсутствие
+// автодобавления, которое было до этого шага.
+async function ensureMember(projectId, userId, role) {
+  const existing = await query(
+    'SELECT id FROM members WHERE project_id = $1 AND user_id = $2',
+    [projectId, userId]
+  );
+  if (existing.rows.length > 0) return;
+  await query(
+    'INSERT INTO members (id, project_id, user_id, role) VALUES ($1, $2, $3, $4)',
+    [generateId(), projectId, userId, role]
+  );
+}
+
 // Функция строит часть "WHERE ..." SQL-запроса из req.query.
 //
 // columnMap — объект вида { camelCaseИмяВQuery: 'snake_case_имя_в_базе' },
@@ -139,7 +165,7 @@ app.get('/users', authenticateToken, async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить пользователей' });
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
@@ -150,21 +176,22 @@ app.get('/users/:id', authenticateToken, async (req, res) => {
       req.params.id,
     ]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
+      return res.status(404).json({ error: 'User not found' });
     }
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить пользователя' });
+    res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
 // ===================== PROJECTS: столбцы и SELECT =====================
 
-// columnMap для projects без id — используется при INSERT (маппинг
-// camelCase из body → snake_case столбцы). PROJECT_FILTER_COLUMNS ниже —
-// то же самое, но с добавленным id, для фильтрации по query (там id тоже
-// осмысленный параметр, например GET /projects?id=X).
+// columnMap для projects — используется при INSERT (маппинг camelCase
+// из body → snake_case столбцы) и в PATCH /projects/:id через
+// buildSetClause. Для фильтрации в GET /projects больше не используется
+// (см. комментарий у самого маршрута ниже — там своя, более строгая
+// логика видимости, не белый список query-параметров).
 const PROJECT_COLUMNS = {
   name: 'name',
   description: 'description',
@@ -172,23 +199,58 @@ const PROJECT_COLUMNS = {
   ownerId: 'owner_id',
   status: 'status',
 };
-const PROJECT_FILTER_COLUMNS = { id: 'id', ...PROJECT_COLUMNS };
 
 // Список столбцов с алиасами — превращает snake_case базы в camelCase,
 // который ждёт фронт. Собран в константу, чтобы не дублировать в каждом
 // запросе к projects.
 const PROJECTS_SELECT = `id, name, description, due_date AS "dueDate", owner_id AS "ownerId", status`;
 
-// GET /projects — поддерживает, например, GET /projects?ownerId=X —
-// тогда останутся только проекты этого владельца.
+// GET /projects — НАМЕРЕННО не использует buildWhereClause с ownerId
+// в белом списке (как было раньше). Раньше GET /projects?ownerId=X
+// доверял X из query напрямую — а значит ЛЮБОЙ залогиненный (с ЛЮБЫМ
+// валидным токеном) мог подставить чужой id и получить список чужих
+// проектов. Тот же класс дыры, что мы уже закрывали в GET /friendships,
+// и лечится тем же приёмом: ownerId из query больше не участвует в SQL,
+// видимость всегда определяется req.user.id из подписанного токена.
+//
+// Видны проекты, где юзер:
+//  - owner (owner_id = req.user.id), ИЛИ
+//  - состоит в members этого проекта.
+//
+// EXISTS-подзапрос, а не JOIN members к projects: JOIN дал бы отдельную
+// строку projects на КАЖДУЮ подходящую запись в members — например,
+// проект с тремя участниками попал бы в результат три раза, и пришлось
+// бы ещё SELECT DISTINCT, чтобы убрать дубли. EXISTS — это просто
+// проверка "есть хотя бы одна такая запись, да/нет", подзапрос
+// возвращает булево значение и в принципе не может задвоить строки
+// внешнего SELECT.
+//
+// ?status= из query по-прежнему поддержан — это не сужение "чьи
+// проекты видно" (оно и так уже жёстко задано), а фильтр внутри уже
+// разрешённого набора.
 app.get('/projects', authenticateToken, async (req, res) => {
   try {
-    const { whereSql, params } = buildWhereClause(req.query, PROJECT_FILTER_COLUMNS);
-    const result = await query(`SELECT ${PROJECTS_SELECT} FROM projects${whereSql}`, params);
+    const conditions = [
+      `(owner_id = $1 OR EXISTS (
+        SELECT 1 FROM members
+        WHERE members.project_id = projects.id AND members.user_id = $1
+      ))`,
+    ];
+    const params = [req.user.id];
+
+    if (typeof req.query.status === 'string') {
+      params.push(req.query.status);
+      conditions.push(`status = $${params.length}`);
+    }
+
+    const result = await query(
+      `SELECT ${PROJECTS_SELECT} FROM projects WHERE ${conditions.join(' AND ')}`,
+      params
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить проекты' });
+    res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
 
@@ -201,12 +263,12 @@ app.get('/projects/:id', authenticateToken, async (req, res) => {
       req.params.id,
     ]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Проект не найден' });
+      return res.status(404).json({ error: 'Project not found' });
     }
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить проект' });
+    res.status(500).json({ error: 'Failed to fetch project' });
   }
 });
 
@@ -218,11 +280,12 @@ const TASK_COLUMNS = {
   status: 'status',
   projectId: 'project_id',
   assignedUserId: 'assigned_user_id',
+  dueDate: 'due_date',
   completedAt: 'completed_at',
 };
 const TASK_FILTER_COLUMNS = { id: 'id', ...TASK_COLUMNS };
 
-const TASKS_SELECT = `id, title, description, status, project_id AS "projectId", assigned_user_id AS "assignedUserId", completed_at AS "completedAt"`;
+const TASKS_SELECT = `id, title, description, status, project_id AS "projectId", assigned_user_id AS "assignedUserId", due_date AS "dueDate", completed_at AS "completedAt"`;
 
 // GET /tasks — поддерживает GET /tasks?projectId=X (задачи проекта) и
 // GET /tasks?assignedUserId=X (задачи конкретного пользователя), а также
@@ -234,7 +297,7 @@ app.get('/tasks', authenticateToken, async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить задачи' });
+    res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 });
 
@@ -245,12 +308,12 @@ app.get('/tasks/:id', authenticateToken, async (req, res) => {
       req.params.id,
     ]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Задача не найдена' });
+      return res.status(404).json({ error: 'Task not found' });
     }
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить задачу' });
+    res.status(500).json({ error: 'Failed to fetch task' });
   }
 });
 
@@ -274,7 +337,7 @@ app.get('/members', authenticateToken, async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить участников' });
+    res.status(500).json({ error: 'Failed to fetch members' });
   }
 });
 
@@ -320,7 +383,7 @@ app.get('/friendships', authenticateToken, async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось получить список друзей' });
+    res.status(500).json({ error: 'Failed to fetch friends list' });
   }
 });
 
@@ -363,10 +426,10 @@ app.post('/users', async (req, res) => {
     // а не сбой сервера, поэтому ловим её отдельно и отвечаем 409
     // (Conflict) с понятным сообщением, а не падаем в общий 500.
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'Этот email уже занят' });
+      return res.status(409).json({ error: 'This email is already taken' });
     }
     console.error(err);
-    res.status(500).json({ error: 'Не удалось создать пользователя' });
+    res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
@@ -379,7 +442,7 @@ app.post('/login', async (req, res) => {
   // Общее сообщение об ошибке — намеренно одно и то же и для "нет такого
   // email", и для "неверный пароль" (см. пояснение в чате про то, почему
   // их нельзя различать в ответе).
-  const INVALID_CREDENTIALS = { error: 'Неверный email или пароль' };
+  const INVALID_CREDENTIALS = { error: 'Invalid email or password' };
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -413,7 +476,7 @@ app.post('/login', async (req, res) => {
     res.json({ user: userWithoutPassword, token });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось выполнить вход' });
+    res.status(500).json({ error: 'Failed to log in' });
   }
 });
 
@@ -428,7 +491,7 @@ app.put('/users/:id', authenticateToken, async (req, res) => {
     // мог бы поставить в URL чужой id и переписать чужие имя/email/пароль —
     // токен доказывает только "кто-то авторизован", а не "именно на этот id".
     if (req.user.id !== req.params.id) {
-      return res.status(403).json({ error: 'Нельзя изменять чужой аккаунт' });
+      return res.status(403).json({ error: "Cannot modify another user's account" });
     }
 
     // Отличаем "пароль меняют" от "пароль не трогают" через 'password' in
@@ -464,12 +527,12 @@ app.put('/users/:id', authenticateToken, async (req, res) => {
       params
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
+      return res.status(404).json({ error: 'User not found' });
     }
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось обновить пользователя' });
+    res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
@@ -493,17 +556,17 @@ app.put('/users/:id', authenticateToken, async (req, res) => {
 app.put('/users/:id/password', authenticateToken, async (req, res) => {
   try {
     if (req.user.id !== req.params.id) {
-      return res.status(403).json({ error: 'Нельзя менять чужой пароль' });
+      return res.status(403).json({ error: "Cannot change another user's password" });
     }
 
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Нужно указать текущий и новый пароль' });
+      return res.status(400).json({ error: 'Current and new password are required' });
     }
 
     const existing = await query('SELECT password FROM users WHERE id = $1', [req.params.id]);
     if (existing.rows.length === 0) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const passwordMatches = await bcrypt.compare(currentPassword, existing.rows[0].password);
@@ -511,7 +574,7 @@ app.put('/users/:id/password', authenticateToken, async (req, res) => {
       // Тут, в отличие от /login, уточнять ошибку можно: id уже известен
       // (пришёл в URL от залогиненного юзера), это не попытка узнать,
       // существует ли такой email — enumeration тут ничего не даёт.
-      return res.status(401).json({ error: 'Текущий пароль неверен' });
+      return res.status(401).json({ error: 'Current password is incorrect' });
     }
 
     const newPasswordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
@@ -522,7 +585,7 @@ app.put('/users/:id/password', authenticateToken, async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось сменить пароль' });
+    res.status(500).json({ error: 'Failed to change password' });
   }
 });
 
@@ -533,21 +596,21 @@ app.delete('/users/:id', authenticateToken, async (req, res) => {
     // залогиненный юзер мог бы удалить чужой аккаунт, просто подставив
     // чужой id в URL.
     if (req.user.id !== req.params.id) {
-      return res.status(403).json({ error: 'Нельзя удалить чужой аккаунт' });
+      return res.status(403).json({ error: "Cannot delete another user's account" });
     }
 
     // RETURNING id тут нужен не сам по себе, а чтобы узнать, была ли вообще
     // удалена строка — если id не существовал, result.rows будет пустым.
     const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [req.params.id]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
+      return res.status(404).json({ error: 'User not found' });
     }
     // json-server в ответ на DELETE отдавал пустой объект — повторяем
     // это поведение, чтобы фронтенд, который так уже привык, не сломался.
     res.json({});
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось удалить пользователя' });
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
@@ -565,7 +628,7 @@ app.post('/projects', authenticateToken, async (req, res) => {
       id: generateId(),
       name: req.body.name,
       description: req.body.description,
-      dueDate: req.body.dueDate ?? null, // необязательное поле, как и в схеме
+      dueDate: emptyToNull(req.body.dueDate), // необязательное поле — пусто/не пришло → NULL
       ownerId: req.body.ownerId,
       // Если фронт не прислал status явно — берём тот же 'active', что
       // и DEFAULT в схеме таблицы (см. schema.sql / миграцию 004).
@@ -580,10 +643,23 @@ app.post('/projects', authenticateToken, async (req, res) => {
        RETURNING ${PROJECTS_SELECT}`,
       [newProject.id, newProject.name, newProject.description, newProject.dueDate, newProject.ownerId, newProject.status]
     );
+
+    // Владелец тоже должен быть записан в members (role='owner') — иначе
+    // GET /projects (видимость через "owner_id = я ИЛИ я в members") всё
+    // равно сработала бы корректно для владельца через owner_id, но
+    // Часть 2 (права по роли) будет смотреть в members, а не в owner_id
+    // проекта напрямую. Проект только что создан, строки в members для
+    // него по определению ещё нет — проверка на дубль (как в ensureMember)
+    // тут не нужна, обычный INSERT.
+    await query(
+      'INSERT INTO members (id, project_id, user_id, role) VALUES ($1, $2, $3, $4)',
+      [generateId(), newProject.id, newProject.ownerId, 'owner']
+    );
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось создать проект' });
+    res.status(500).json({ error: 'Failed to create project' });
   }
 });
 
@@ -594,14 +670,24 @@ app.post('/projects', authenticateToken, async (req, res) => {
 // в SQL.
 app.patch('/projects/:id', authenticateToken, async (req, res) => {
   try {
-    const { setSql, params } = buildSetClause(req.body, PROJECT_COLUMNS);
+    // Как и в PATCH /tasks/:id: если dueDate ПРИСУТСТВУЕТ в body, но пришла
+    // пустой строкой (например, поле даты в форме очистили), в базу должен
+    // уйти NULL, а не '' — иначе INSERT/UPDATE упадёт на приведении '' к DATE.
+    // buildSetClause сам ничего не санитизирует, поэтому нормализуем body
+    // заранее, тем же приёмом (проверка "in", чтобы не задеть партийность PATCH).
+    const patchBody = { ...req.body };
+    if ('dueDate' in patchBody) {
+      patchBody.dueDate = emptyToNull(patchBody.dueDate);
+    }
+
+    const { setSql, params } = buildSetClause(patchBody, PROJECT_COLUMNS);
 
     if (!setSql) {
       const existing = await query(`SELECT ${PROJECTS_SELECT} FROM projects WHERE id = $1`, [
         req.params.id,
       ]);
       if (existing.rows.length === 0) {
-        return res.status(404).json({ error: 'Проект не найден' });
+        return res.status(404).json({ error: 'Project not found' });
       }
       return res.json(existing.rows[0]);
     }
@@ -612,28 +698,40 @@ app.patch('/projects/:id', authenticateToken, async (req, res) => {
       params
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Проект не найден' });
+      return res.status(404).json({ error: 'Project not found' });
     }
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось обновить проект' });
+    res.status(500).json({ error: 'Failed to update project' });
   }
 });
 
 // DELETE /projects/:id — удалить проект по id.
 app.delete('/projects/:id', authenticateToken, async (req, res) => {
   try {
+    // Same ownership check as PUT/DELETE /users/:id — otherwise any logged-in
+    // project member (not just the owner) could delete the project just by
+    // knowing its id. req.user.id comes from the SIGNED token, so it can be
+    // trusted; owner_id is read from the database, not from body/URL.
+    const existing = await query('SELECT owner_id FROM projects WHERE id = $1', [req.params.id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (existing.rows[0].owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the project owner can delete this project' });
+    }
+
     const result = await query('DELETE FROM projects WHERE id = $1 RETURNING id', [
       req.params.id,
     ]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Проект не найден' });
+      return res.status(404).json({ error: 'Project not found' });
     }
     res.json({});
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось удалить проект' });
+    res.status(500).json({ error: 'Failed to delete project' });
   }
 });
 
@@ -649,11 +747,12 @@ app.post('/tasks', authenticateToken, async (req, res) => {
       status: req.body.status,
       projectId: emptyToNull(req.body.projectId), // задача может быть без проекта
       assignedUserId: emptyToNull(req.body.assignedUserId), // и без исполнителя
+      dueDate: emptyToNull(req.body.dueDate), // пусто/не пришло → NULL, без срока
       completedAt: emptyToNull(req.body.completedAt), // пусто/не пришло → NULL, не завершена
     };
     const result = await query(
-      `INSERT INTO tasks (id, title, description, status, project_id, assigned_user_id, completed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO tasks (id, title, description, status, project_id, assigned_user_id, due_date, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING ${TASKS_SELECT}`,
       [
         newTask.id,
@@ -662,13 +761,23 @@ app.post('/tasks', authenticateToken, async (req, res) => {
         newTask.status,
         newTask.projectId,
         newTask.assignedUserId,
+        newTask.dueDate,
         newTask.completedAt,
       ]
     );
+
+    // Если у задачи есть и проект, и исполнитель — исполнитель должен
+    // стать участником проекта (members), иначе GET /projects его туда
+    // не пустит и он не увидит сам проект, к которому его же привязали
+    // задачей — ровно та проблема, которую чинит этот шаг.
+    if (newTask.projectId && newTask.assignedUserId) {
+      await ensureMember(newTask.projectId, newTask.assignedUserId, 'member');
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось создать задачу' });
+    res.status(500).json({ error: 'Failed to create task' });
   }
 });
 
@@ -689,6 +798,9 @@ app.patch('/tasks/:id', authenticateToken, async (req, res) => {
     if ('projectId' in patchBody) {
       patchBody.projectId = emptyToNull(patchBody.projectId);
     }
+    if ('dueDate' in patchBody) {
+      patchBody.dueDate = emptyToNull(patchBody.dueDate);
+    }
     if ('completedAt' in patchBody) {
       patchBody.completedAt = emptyToNull(patchBody.completedAt);
     }
@@ -707,7 +819,7 @@ app.patch('/tasks/:id', authenticateToken, async (req, res) => {
         req.params.id,
       ]);
       if (existing.rows.length === 0) {
-        return res.status(404).json({ error: 'Задача не найдена' });
+        return res.status(404).json({ error: 'Task not found' });
       }
       return res.json(existing.rows[0]);
     }
@@ -721,26 +833,66 @@ app.patch('/tasks/:id', authenticateToken, async (req, res) => {
       params
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Задача не найдена' });
+      return res.status(404).json({ error: 'Task not found' });
     }
-    res.json(result.rows[0]);
+    const updatedTask = result.rows[0];
+
+    // Та же автопривязка, что и в POST /tasks — проверяем итоговое
+    // состояние задачи ПОСЛЕ обновления (а не только "изменили ли именно
+    // assignedUserId в этом PATCH"), так надёжнее: если задачу назначили
+    // давно, ДО того как появилась эта автопривязка, любой следующий
+    // PATCH (даже просто смена status) всё равно доведёт её исполнителя
+    // до состояния "он в members". ensureMember сам проверяет дубли,
+    // так что лишний вызов на каждый PATCH не создаёт лишних записей.
+    if (updatedTask.projectId && updatedTask.assignedUserId) {
+      await ensureMember(updatedTask.projectId, updatedTask.assignedUserId, 'member');
+    }
+
+    res.json(updatedTask);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось обновить задачу' });
+    res.status(500).json({ error: 'Failed to update task' });
   }
 });
 
 // DELETE /tasks/:id — удалить задачу по id.
 app.delete('/tasks/:id', authenticateToken, async (req, res) => {
   try {
+    // Same ownership check as DELETE /projects/:id — otherwise any logged-in
+    // project member (not just the owner) could delete tasks in a project
+    // that isn't theirs, just by knowing the task id. req.user.id comes from
+    // the SIGNED token; project_id/owner_id are read from the database via a
+    // LEFT JOIN (LEFT, not JOIN, because personal tasks have project_id =
+    // NULL and still need to resolve — with an inner JOIN they'd vanish from
+    // the result and 404 instead of going through the ownership check).
+    //
+    // Personal tasks (project_id = NULL) have no owner column of their own —
+    // there's currently no UI that creates them and no dedicated "task owner"
+    // field to check, so they fall through to delete unconditionally, same
+    // as before this fix.
+    const existing = await query(
+      `SELECT t.project_id AS "projectId", p.owner_id AS "projectOwnerId"
+       FROM tasks t
+       LEFT JOIN projects p ON p.id = t.project_id
+       WHERE t.id = $1`,
+      [req.params.id]
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    const { projectId, projectOwnerId } = existing.rows[0];
+    if (projectId && projectOwnerId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the project owner can delete this task' });
+    }
+
     const result = await query('DELETE FROM tasks WHERE id = $1 RETURNING id', [req.params.id]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Задача не найдена' });
+      return res.status(404).json({ error: 'Task not found' });
     }
     res.json({});
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось удалить задачу' });
+    res.status(500).json({ error: 'Failed to delete task' });
   }
 });
 
@@ -764,7 +916,7 @@ app.post('/members', authenticateToken, async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось создать участника' });
+    res.status(500).json({ error: 'Failed to create member' });
   }
 });
 
@@ -775,12 +927,12 @@ app.delete('/members/:id', authenticateToken, async (req, res) => {
       req.params.id,
     ]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Участник не найден' });
+      return res.status(404).json({ error: 'Member not found' });
     }
     res.json({});
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось удалить участника' });
+    res.status(500).json({ error: 'Failed to delete member' });
   }
 });
 
@@ -808,7 +960,7 @@ app.post('/friendships', authenticateToken, async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось отправить заявку в друзья' });
+    res.status(500).json({ error: 'Failed to send friend request' });
   }
 });
 
@@ -823,7 +975,7 @@ app.patch('/friendships/:id', authenticateToken, async (req, res) => {
       req.params.id,
     ]);
     if (existing.rows.length === 0) {
-      return res.status(404).json({ error: 'Заявка не найдена' });
+      return res.status(404).json({ error: 'Request not found' });
     }
 
     // Принять заявку может ТОЛЬКО получатель (friend_id из записи) —
@@ -834,7 +986,7 @@ app.patch('/friendships/:id', authenticateToken, async (req, res) => {
     // ничего бы не значило, любая заявка стала бы дружбой мгновенно,
     // ровно то поведение, от которого мы уходим этим шагом.
     if (req.user.id !== existing.rows[0].friend_id) {
-      return res.status(403).json({ error: 'Принять заявку может только получатель' });
+      return res.status(403).json({ error: 'Only the recipient can accept the request' });
     }
 
     const result = await query(
@@ -844,7 +996,7 @@ app.patch('/friendships/:id', authenticateToken, async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось принять заявку' });
+    res.status(500).json({ error: 'Failed to accept request' });
   }
 });
 
@@ -857,7 +1009,7 @@ app.delete('/friendships/:id', authenticateToken, async (req, res) => {
       req.params.id,
     ]);
     if (existing.rows.length === 0) {
-      return res.status(404).json({ error: 'Запись о дружбе не найдена' });
+      return res.status(404).json({ error: 'Friendship record not found' });
     }
 
     // Удалить может только один из двух участников записи — либо тот,
@@ -869,14 +1021,14 @@ app.delete('/friendships/:id', authenticateToken, async (req, res) => {
     // "это твоя запись".
     const { user_id, friend_id } = existing.rows[0];
     if (req.user.id !== user_id && req.user.id !== friend_id) {
-      return res.status(403).json({ error: 'Нельзя удалить чужую заявку или дружбу' });
+      return res.status(403).json({ error: "Cannot delete another user's request or friendship" });
     }
 
     await query('DELETE FROM friendships WHERE id = $1', [req.params.id]);
     res.json({});
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Не удалось удалить друга' });
+    res.status(500).json({ error: 'Failed to remove friend' });
   }
 });
 

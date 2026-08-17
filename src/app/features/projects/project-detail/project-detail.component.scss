@@ -135,7 +135,7 @@
   &:hover .delete-task-btn,
   &:hover .edit-btn { opacity: 1; }
 
-  /* Warning state — yellow glow */
+  /* Warning state — yellow glow (legacy, kept for state-warning consumers) */
   &.state-warning {
     border-color: rgba(245, 158, 11, 0.45);
     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15),
@@ -143,7 +143,7 @@
     &:hover { border-color: rgba(245, 158, 11, 0.7); }
   }
 
-  /* Expired state — red glow */
+  /* Expired state — red glow (legacy, kept for state-expired consumers) */
   &.state-expired {
     border-color: rgba(239, 68, 68, 0.45);
     box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.15),
@@ -151,7 +151,35 @@
     &:hover { border-color: rgba(239, 68, 68, 0.7); }
   }
 
+  /* Soon (≤7 days) — soft yellow glow */
+  &.state-soon {
+    border-color: rgba(234, 179, 8, 0.4);
+    box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.12),
+                0 4px 18px rgba(234, 179, 8, 0.06);
+    &:hover { border-color: rgba(234, 179, 8, 0.65); }
+  }
+
+  /* Urgent (≤3 days) — bright orange glow, more insistent than "soon" */
+  &.state-urgent {
+    border-color: rgba(249, 115, 22, 0.55);
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.18),
+                0 4px 22px rgba(249, 115, 22, 0.1);
+    &:hover { border-color: rgba(249, 115, 22, 0.8); }
+  }
+
   &.completed { opacity: 0.45; &:hover { opacity: 0.75; } }
+
+  /* Archived (overdue) — muted grey, no colour glow */
+  &.archived {
+    opacity: 0.55;
+    filter: grayscale(0.4);
+    &:hover { opacity: 0.8; }
+  }
+
+  /* Task assigned to someone else in a project I don't own — dashed, same colour */
+  &.is-others {
+    border-style: dashed;
+  }
 }
 
 /* Main flex row inside each card */
@@ -202,9 +230,22 @@
   i { font-size: 12px; }
 
   &.state-none    { background: rgba(107,111,138,.12); color: #6b6f8a; }
-  &.state-normal  { background: rgba(16,185,129,.10); color: #10b981; }
+  &.state-normal  { background: rgba(107,111,138,.12); color: #8b8fa8; }
   &.state-warning { background: rgba(245,158,11,.12); color: #f59e0b; }
   &.state-expired { background: rgba(239,68,68,.12);  color: #ef4444; }
+
+  /* Часть 2A ТЗ: soon (жёлтый, мягко) → urgent (оранжевый, ярко) → overdue (красный) */
+  &.state-soon    { background: rgba(234,179,8,.14);  color: #eab308; }
+  &.state-urgent  { background: rgba(249,115,22,.18); color: #f97316; font-weight: 600; }
+  &.state-overdue { background: rgba(239,68,68,.16);  color: #ef4444; font-weight: 600; }
+}
+
+.others-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; color: #6b6f8a;
+  padding: 2px 8px; border-radius: 10px;
+  border: 1px dashed #3a3d52;
+  i { font-size: 12px; }
 }
 
 /* ── Task side (buttons) ─────────────────────────────────────────────────── */

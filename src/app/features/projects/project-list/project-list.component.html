@@ -21,8 +21,8 @@
       <button class="filter-tab" [class.active]="activeFilter === 'active'" (click)="setFilter('active')">
         Active
       </button>
-      <button class="filter-tab paused-tab" [class.active]="activeFilter === 'paused'" (click)="setFilter('paused')">
-        <i class="ti ti-pause"></i> Paused
+      <button class="filter-tab paused-tab" [class.active]="activeFilter === 'archived'" (click)="setFilter('archived')">
+        <i class="ti ti-archive"></i> Archive
       </button>
       <button class="filter-tab" [class.active]="activeFilter === 'done'"   (click)="setFilter('done')">
         <i class="ti ti-circle-check"></i> Completed
@@ -39,29 +39,38 @@
   <!-- ACTIVE PROJECTS GRID -->
   <div class="projects-grid" *ngIf="activeCards.length > 0">
     <div class="project-card"
+         [class.is-shared]="isShared(card.project)"
          *ngFor="let card of activeCards; trackBy: trackByProjectId"
          (click)="openProject(card.project.id)">
       <div class="card-header">
         <span class="card-name">{{ card.project.name }}</span>
         <span class="status-tag active">Active</span>
+        <span class="shared-tag" *ngIf="isShared(card.project)" title="You're a member, not the owner">
+          <i class="ti ti-users"></i>
+        </span>
         <div class="menu-wrapper">
-          <button class="menu-btn" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+          <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" title="More actions">
             <i class="ti ti-dots"></i>
           </button>
           <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
-            <div class="dropdown-item pause" (click)="pauseProject(card.project.id, $event)">
+            <div class="dropdown-item pause" *ngIf="isOwner(card.project)" (click)="pauseProject(card.project.id, $event)">
               <i class="ti ti-pause"></i> Pause project
             </div>
-            <div class="dropdown-divider"></div>
-            <div class="dropdown-item delete" (click)="deleteProject(card.project.id, $event)">
+            <div class="dropdown-divider" *ngIf="isOwner(card.project)"></div>
+            <div class="dropdown-item delete" *ngIf="isOwner(card.project)" (click)="deleteProject(card.project.id, $event)">
               <i class="ti ti-trash"></i> Delete project
             </div>
           </div>
         </div>
       </div>
       <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
-      <div class="card-due" *ngIf="card.project.dueDate">
-        <i class="ti ti-calendar"></i> Due {{ card.project.dueDate | date:'dd MMM yyyy' }}
+      <div class="card-due"
+           *ngIf="card.project.dueDate"
+           [class.state-soon]="getUrgency(card.project) === 'soon'"
+           [class.state-urgent]="getUrgency(card.project) === 'urgent'">
+        <i class="ti ti-calendar"></i>
+        Due {{ card.project.dueDate | date:'dd MMM yyyy' }}
+        <span class="urgency-label" *ngIf="getUrgencyLabel(card.project)">— {{ getUrgencyLabel(card.project) }}</span>
       </div>
       <div class="card-progress">
         <div class="progress-bar">
@@ -93,43 +102,47 @@
     <p>No active projects.</p>
   </div>
 
-  <!-- PAUSED PROJECTS ACCORDION -->
+  <!-- ARCHIVE ACCORDION (Part 3 of the spec): paused + overdue, greyed out -->
   <div class="paused-section"
-       *ngIf="pausedCards.length > 0 && (activeFilter === 'all' || activeFilter === 'paused')">
-    <div class="accordion-header" (click)="togglePausedProjects()">
+       *ngIf="archivedCards.length > 0 && (activeFilter === 'all' || activeFilter === 'archived')">
+    <div class="accordion-header" (click)="toggleArchivedProjects()">
       <div class="accordion-left">
-        <i class="ti" [class.ti-chevron-right]="!showPausedProjects"
-           [class.ti-chevron-down]="showPausedProjects"></i>
-        <span>Paused Projects ({{ pausedCards.length }})</span>
+        <i class="ti" [class.ti-chevron-right]="!showArchivedProjects"
+           [class.ti-chevron-down]="showArchivedProjects"></i>
+        <span>Archive ({{ archivedCards.length }})</span>
       </div>
       <div class="accordion-line"></div>
     </div>
 
-    <div class="projects-grid paused-grid" *ngIf="showPausedProjects">
-      <div class="project-card is-paused"
-           *ngFor="let card of pausedCards; trackBy: trackByProjectId"
+    <div class="projects-grid paused-grid" *ngIf="showArchivedProjects">
+      <div class="project-card is-archived"
+           *ngFor="let card of archivedCards; trackBy: trackByProjectId"
            (click)="openProject(card.project.id)">
         <div class="card-header">
           <span class="card-name">{{ card.project.name }}</span>
-          <span class="status-tag paused"><i class="ti ti-pause"></i> Paused</span>
+          <span class="status-tag paused" *ngIf="card.project.status === 'paused'"><i class="ti ti-pause"></i> Paused</span>
+          <span class="status-tag overdue" *ngIf="card.project.status !== 'paused'"><i class="ti ti-clock-x"></i> Overdue</span>
           <div class="menu-wrapper">
-            <button class="menu-btn" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+            <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" title="More actions">
               <i class="ti ti-dots"></i>
             </button>
             <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
-              <div class="dropdown-item" (click)="unpauseProject(card.project.id, $event)">
+              <div class="dropdown-item" *ngIf="card.project.status === 'paused' && isOwner(card.project)" (click)="unpauseProject(card.project.id, $event)">
                 <i class="ti ti-player-play"></i> Unpause project
               </div>
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-item delete" (click)="deleteProject(card.project.id, $event)">
+              <div class="dropdown-divider" *ngIf="card.project.status === 'paused' && isOwner(card.project)"></div>
+              <div class="dropdown-item delete" *ngIf="isOwner(card.project)" (click)="deleteProject(card.project.id, $event)">
                 <i class="ti ti-trash"></i> Delete project
               </div>
             </div>
           </div>
         </div>
         <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
-        <div class="paused-notice">
+        <div class="paused-notice" *ngIf="card.project.status === 'paused'">
           <i class="ti ti-lock"></i> Task actions frozen — unpause to continue
+        </div>
+        <div class="card-due" *ngIf="card.project.status !== 'paused' && card.project.dueDate">
+          <i class="ti ti-calendar-off"></i> Was due {{ card.project.dueDate | date:'dd MMM yyyy' }}
         </div>
         <div class="card-progress">
           <div class="progress-bar">
@@ -167,11 +180,11 @@
           <span class="card-name">{{ card.project.name }}</span>
           <span class="status-tag done">Completed</span>
           <div class="menu-wrapper">
-            <button class="menu-btn" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+            <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" title="More actions">
               <i class="ti ti-dots"></i>
             </button>
             <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
-              <div class="dropdown-item delete" (click)="deleteProject(card.project.id, $event)">
+              <div class="dropdown-item delete" *ngIf="isOwner(card.project)" (click)="deleteProject(card.project.id, $event)">
                 <i class="ti ti-trash"></i> Delete project
               </div>
             </div>

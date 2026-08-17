@@ -7,6 +7,7 @@ import { ProjectRepository } from '../../domain/repositories/project.repository'
 import { MemberRepository } from '../../domain/repositories/member.repository';
 import { AuthService } from '../../core/auth/auth.service';
 import { FriendshipService, FriendSearchResult } from '../../core/friendship/friendship.service';
+import { UrgencyService, UrgencyLevel } from '../../core/urgency/urgency.service';
 import { Task } from '../../domain/models/task.model';
 import { Project } from '../../domain/models/project.model';
 import { User } from '../../domain/models/user.model';
@@ -26,6 +27,16 @@ interface TrendDay {
   score: number | null;
   dayLabel: string;
   isToday: boolean;
+}
+
+/** Одна строка виджета "Дедлайны на подходе" (Часть 2C ТЗ) — задача или проект. */
+interface DeadlineItem {
+  id: string;
+  title: string;
+  dueDate: string;
+  kind: 'task' | 'project';
+  urgency: UrgencyLevel;
+  projectName?: string;
 }
 
 @Component({
@@ -62,6 +73,7 @@ export class DashboardComponent implements OnInit {
     private projectRepo: ProjectRepository,
     private memberRepo: MemberRepository,
     private friendshipService: FriendshipService,
+    private urgencyService: UrgencyService,
     private router: Router,
     private http: HttpClient,
   ) {}
@@ -80,7 +92,7 @@ export class DashboardComponent implements OnInit {
       this.buildCards();
     });
 
-    this.projectRepo.getByOwner(this.currentUser.id).subscribe((p: Project[]) => {
+    this.projectRepo.getMine().subscribe((p: Project[]) => {
       this.myProjects = p;
       this.buildCards();
     });
@@ -111,9 +123,19 @@ export class DashboardComponent implements OnInit {
   // ── Simple stats ───────────────────────────────────────────────────────────
 
   get activeProjectsCount(): number { return this.myProjects.length; }
-  get pendingTasksCount(): number { return this.myTasks.filter((t) => t.status !== 'done').length; }
+  get pendingTasksCount(): number { return this.myTasks.filter((t) => t.status !== 'done' && !this.isTaskProjectPaused(t)).length; }
   get completedTasksCount(): number { return this.myTasks.filter((t) => t.status === 'done').length; }
-  get pendingTasks(): Task[] { return this.myTasks.filter((t) => t.status === 'todo').slice(0, 4); }
+  get pendingTasks(): Task[] { return this.myTasks.filter((t) => t.status === 'todo' && !this.isTaskProjectPaused(t)).slice(0, 4); }
+
+  // Проект на паузе (см. myProjects — уже содержит status для каждого
+  // проекта, где текущий юзер владелец/участник) "замораживает" свои
+  // задачи: они не удаляются, просто не считаются активными нигде на
+  // дашборде (счётчики, Up Next, дедлайны), пока проект не возобновят.
+  // Задачи без projectId (личные) паузой никогда не затрагиваются.
+  private isTaskProjectPaused(task: Task): boolean {
+    if (!task.projectId) return false;
+    return this.myProjects.find((p) => p.id === task.projectId)?.status === 'paused';
+  }
 
   get todayDate(): string {
     const d = new Date();
@@ -131,6 +153,54 @@ export class DashboardComponent implements OnInit {
   getProjectNameById(projectId: string | null): string {
     if (!projectId) return 'Personal';
     return this.myProjects.find((p) => p.id === projectId)?.name ?? 'Unknown';
+  }
+
+  // ── "Дедлайны на подходе" (Часть 2C ТЗ) ─────────────────────────────────────
+
+  /**
+   * Задачи и проекты с приближающимся/просроченным сроком (soon/urgent/overdue),
+   * отсортированные от самого горящего к менее срочному. Паузированные и
+   * завершённые проекты не считаются — их срок больше не актуален. Задачи
+   * ПАУЗИРОВАННЫХ проектов — по той же причине (см. isTaskProjectPaused).
+   */
+  get upcomingDeadlines(): DeadlineItem[] {
+    const items: DeadlineItem[] = [];
+
+    this.myTasks.forEach((t) => {
+      if (t.status === 'done' || !t.dueDate || this.isTaskProjectPaused(t)) return;
+      const urgency = this.urgencyService.getLevel(t.dueDate);
+      if (urgency === 'soon' || urgency === 'urgent' || urgency === 'overdue') {
+        items.push({
+          id: t.id, title: t.title, dueDate: t.dueDate, kind: 'task', urgency,
+          projectName: this.getProjectNameById(t.projectId),
+        });
+      }
+    });
+
+    this.myProjects.forEach((p) => {
+      if (p.status !== 'active' || !p.dueDate) return;
+      const urgency = this.urgencyService.getLevel(p.dueDate);
+      if (urgency === 'soon' || urgency === 'urgent' || urgency === 'overdue') {
+        items.push({ id: p.id, title: p.name, dueDate: p.dueDate, kind: 'project', urgency });
+      }
+    });
+
+    const severity: Record<UrgencyLevel, number> = { overdue: 0, urgent: 1, soon: 2, normal: 3 };
+    return items
+      .sort((a, b) =>
+        severity[a.urgency] - severity[b.urgency] ||
+        (this.urgencyService.getDaysRemaining(a.dueDate)! - this.urgencyService.getDaysRemaining(b.dueDate)!)
+      )
+      .slice(0, 6);
+  }
+
+  getDeadlineUrgencyLabel(item: DeadlineItem): string {
+    return this.urgencyService.getLabel(item.dueDate);
+  }
+
+  goToDeadlineItem(item: DeadlineItem) {
+    if (item.kind === 'project') this.goToProject(item.id);
+    else this.goToMyTasks();
   }
 
   // ── Daily Focus Score ──────────────────────────────────────────────────────
@@ -311,7 +381,7 @@ export class DashboardComponent implements OnInit {
       status: 'active',
     }).subscribe(() => {
       this.closeNewProjectModal();
-      this.projectRepo.getByOwner(this.currentUser.id).subscribe((p: Project[]) => {
+      this.projectRepo.getMine().subscribe((p: Project[]) => {
         this.myProjects = p;
         this.buildCards();
       });

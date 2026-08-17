@@ -100,6 +100,20 @@
     &:hover { border-color: rgba(239, 68, 68, 0.7); }
   }
 
+  /* Soon (≤7 days) — soft yellow */
+  &.state-soon {
+    border-color: rgba(234, 179, 8, 0.4);
+    box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.1), 0 4px 16px rgba(234, 179, 8, 0.05);
+    &:hover { border-color: rgba(234, 179, 8, 0.6); }
+  }
+
+  /* Urgent (≤3 days) — bright orange, more insistent */
+  &.state-urgent {
+    border-color: rgba(249, 115, 22, 0.5);
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.16), 0 4px 18px rgba(249, 115, 22, 0.08);
+    &:hover { border-color: rgba(249, 115, 22, 0.75); }
+  }
+
   /* Paused project — muted amber tint, desaturated */
   &.state-paused {
     border-color: rgba(245, 158, 11, 0.2);
@@ -166,9 +180,13 @@
   white-space: nowrap;
   i { font-size: 11px; }
   &.state-none    { background: rgba(107,111,138,.12); color: #6b6f8a; }
-  &.state-normal  { background: rgba(16,185,129,.10);  color: #10b981; }
+  &.state-normal  { background: rgba(107,111,138,.12); color: #8b8fa8; }
   &.state-warning { background: rgba(245,158,11,.12);  color: #f59e0b; }
   &.state-expired { background: rgba(239,68,68,.12);   color: #ef4444; }
+
+  &.state-soon    { background: rgba(234,179,8,.14);  color: #eab308; }
+  &.state-urgent  { background: rgba(249,115,22,.18); color: #f97316; font-weight: 600; }
+  &.state-overdue { background: rgba(239,68,68,.16);  color: #ef4444; font-weight: 600; }
 }
 
 /* ── Misc ────────────────────────────────────────────────────────────────── */

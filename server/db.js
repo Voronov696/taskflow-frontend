@@ -9,7 +9,17 @@
 // откуда-то ещё раньше, чем настроится server.js.
 require('dotenv').config();
 
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+
+// По умолчанию pg конвертирует колонки типа DATE (OID 1082) в JS Date —
+// а при JSON.stringify() (res.json() в server.js) такой Date уходит клиенту
+// как ISO-строка со временем и таймзоной ("...T22:00:00.000Z"), из-за чего
+// день может сдвинуться, а фронт (formatDueDate/toLocalMidnight — они ждут
+// чистый "YYYY-MM-DD" и делают dateStr.split('-')) получает "Invalid Date".
+// Отключаем эту конвертацию — DATE отдаётся как есть, строкой "YYYY-MM-DD",
+// без времени и часового пояса. Чинит due_date у tasks/projects и
+// completed_at у tasks разом, одним местом.
+types.setTypeParser(1082, (val) => val);
 
 // Pool — это "пул" (набор) уже открытых соединений с базой данных.
 // Открывать новое TCP-соединение с PostgreSQL на каждый запрос дорого

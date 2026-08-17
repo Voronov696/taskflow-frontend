@@ -7,6 +7,7 @@ import { TaskRepository } from '../../../domain/repositories/task.repository';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FriendshipService } from '../../../core/friendship/friendship.service';
 import { DeadlineService, TaskDeadlineState } from '../../../core/deadline/deadline.service';
+import { UrgencyService, UrgencyLevel } from '../../../core/urgency/urgency.service';
 import { Project } from '../../../domain/models/project.model';
 import { Task } from '../../../domain/models/task.model';
 import { User } from '../../../domain/models/user.model';
@@ -36,6 +37,7 @@ export class ProjectDetailComponent implements OnInit {
   editAssigneeId = '';
 
   showCompleted = false;
+  showExpired = false;
   activeFilter: 'all' | 'active' | 'warning' | 'expired' | 'completed' = 'all';
 
   constructor(
@@ -46,6 +48,7 @@ export class ProjectDetailComponent implements OnInit {
     private authService: AuthService,
     private friendshipService: FriendshipService,
     private deadlineService: DeadlineService,
+    private urgencyService: UrgencyService,
   ) {}
 
   ngOnInit() {
@@ -70,10 +73,14 @@ export class ProjectDetailComponent implements OnInit {
     return this.project?.status === 'paused';
   }
 
+  // Просроченные задачи (dueDate в прошлом, status !== 'done') не мусорят в
+  // основном списке — они уходят в сворачиваемую секцию "Просроченные" (см.
+  // expiredTasks ниже, Часть 3 ТЗ). "Готово" в архив не уходит — задача
+  // просто завершена штатно.
   private get sortedActiveTasks(): Task[] {
     const order: Record<TaskDeadlineState, number> = { warning: 0, normal: 1, none: 2, expired: 3 };
     return this.tasks
-      .filter((t) => t.status !== 'done')
+      .filter((t) => t.status !== 'done' && this.getTaskState(t) !== 'expired')
       .sort((a, b) => order[this.getTaskState(a)] - order[this.getTaskState(b)]);
   }
 
@@ -82,7 +89,7 @@ export class ProjectDetailComponent implements OnInit {
     switch (this.activeFilter) {
       case 'active':    return sorted.filter((t) => { const s = this.getTaskState(t); return s === 'normal' || s === 'none'; });
       case 'warning':   return sorted.filter((t) => this.getTaskState(t) === 'warning');
-      case 'expired':   return sorted.filter((t) => this.getTaskState(t) === 'expired');
+      case 'expired':   return []; // раскрывает секцию "Просроченные" ниже, как 'completed' — секцию "Завершённые"
       case 'completed': return [];
       default:          return sorted;
     }
@@ -92,11 +99,16 @@ export class ProjectDetailComponent implements OnInit {
     return this.tasks.filter((t) => t.status === 'done');
   }
 
+  /** Архив — просроченные незавершённые задачи (Часть 3 ТЗ). */
+  get expiredTasks(): Task[] {
+    return this.tasks.filter((t) => t.status !== 'done' && this.getTaskState(t) === 'expired');
+  }
+
   get warningCount(): number {
     return this.tasks.filter((t) => t.status !== 'done' && this.getTaskState(t) === 'warning').length;
   }
   get expiredCount(): number {
-    return this.tasks.filter((t) => t.status !== 'done' && this.getTaskState(t) === 'expired').length;
+    return this.expiredTasks.length;
   }
 
   get emptyFilterMessage(): string {
@@ -112,6 +124,7 @@ export class ProjectDetailComponent implements OnInit {
   setFilter(f: typeof this.activeFilter) {
     this.activeFilter = f;
     if (f === 'completed') this.showCompleted = true;
+    if (f === 'expired') this.showExpired = true;
   }
 
   // ── Deadline helpers ──────────────────────────────────────────────────────
@@ -138,6 +151,24 @@ export class ProjectDetailComponent implements OnInit {
     });
   }
 
+  // ── Срочность (визуальные предупреждения, Часть 2A ТЗ) ─────────────────────
+
+  getUrgency(task: Task): UrgencyLevel | null {
+    return this.urgencyService.getLevel(task.dueDate);
+  }
+
+  getUrgencyLabel(task: Task): string {
+    return this.urgencyService.getLabel(task.dueDate);
+  }
+
+  // ── Групповые проекты (Часть 2B ТЗ) ─────────────────────────────────────────
+
+  /** Задача назначена не на меня — в проекте, где я не владелец, помечаем её пунктиром. */
+  isOthersTask(task: Task): boolean {
+    if (this.isOwner) return false;
+    return !!task.assignedUserId && task.assignedUserId !== this.currentUser?.id;
+  }
+
   // ── Permission checks ─────────────────────────────────────────────────────
 
   /** Nobody can complete a task when the project is paused or when the task is expired. */
@@ -146,10 +177,9 @@ export class ProjectDetailComponent implements OnInit {
     return this.getTaskState(task) !== 'expired';
   }
 
-  /** Paused projects freeze all deletes. Otherwise owner can delete expired; others cannot. */
+  /** Paused projects freeze all deletes. Otherwise only the project owner can delete — others cannot. */
   canDeleteTask(task: Task): boolean {
     if (this.isPaused) return false;
-    if (this.getTaskState(task) !== 'expired') return true;
     return this.isOwner;
   }
 
@@ -227,9 +257,14 @@ export class ProjectDetailComponent implements OnInit {
         dueDate: this.editDueDate || null,
         assignedUserId: this.editAssigneeId,
       })
-      .subscribe(() => {
-        task.dueDate = this.editDueDate || null;
-        task.assignedUserId = this.editAssigneeId;
+      .subscribe((updated) => {
+        // Берём значения из ответа сервера, а не из полей формы — раньше
+        // тут писали то, что ввёл пользователь, не дожидаясь и не проверяя,
+        // что реально сохранилось (due_date у задач тогда даже не было в
+        // базе — см. миграцию 009). Теперь, когда due_date есть, доверяем
+        // именно тому, что подтвердил сервер.
+        task.dueDate = updated.dueDate;
+        task.assignedUserId = updated.assignedUserId;
         this.cancelEdit();
       });
   }
@@ -250,5 +285,6 @@ export class ProjectDetailComponent implements OnInit {
   }
 
   toggleCompleted() { this.showCompleted = !this.showCompleted; }
+  toggleExpired() { this.showExpired = !this.showExpired; }
   goBack() { this.router.navigate(['/app/projects']); }
 }

@@ -7,6 +7,7 @@ import { TaskRepository } from '../../domain/repositories/task.repository';
 import { ProjectRepository } from '../../domain/repositories/project.repository';
 import { AuthService } from '../../core/auth/auth.service';
 import { DeadlineService, TaskDeadlineState } from '../../core/deadline/deadline.service';
+import { UrgencyService, UrgencyLevel } from '../../core/urgency/urgency.service';
 import { Task } from '../../domain/models/task.model';
 import { Project } from '../../domain/models/project.model';
 
@@ -22,6 +23,7 @@ export class MyTasksComponent implements OnInit {
   myTasks: Task[] = [];
   projectsMap: Record<string, Project> = {};
   showCompleted = false;
+  showExpired = false;
   activeFilter: 'all' | 'active' | 'warning' | 'expired' | 'completed' = 'all';
 
   constructor(
@@ -29,6 +31,7 @@ export class MyTasksComponent implements OnInit {
     private taskRepo: TaskRepository,
     private projectRepo: ProjectRepository,
     private deadlineService: DeadlineService,
+    private urgencyService: UrgencyService,
     private router: Router,
   ) {}
 
@@ -53,10 +56,18 @@ export class MyTasksComponent implements OnInit {
 
   get completedTasks(): Task[] { return this.myTasks.filter((t) => t.status === 'done'); }
 
+  // Просроченные задачи уходят в сворачиваемый архив (Часть 3 ТЗ) — та же
+  // логика, что в project-detail.component.ts, ради единообразия обеих
+  // страниц со списками задач.
+  //
+  // Задачи проекта на паузе тоже уходят отсюда (см. isProjectPaused) — они
+  // не удаляются и не пропадают из myTasks, просто не считаются активными,
+  // пока проект приостановлен. Внутри самого проекта (project-detail) они
+  // по-прежнему видны — там своя, независимая загрузка задач.
   private get sortedActiveTasks(): Task[] {
     const order: Record<TaskDeadlineState, number> = { warning: 0, normal: 1, none: 2, expired: 3 };
     return this.myTasks
-      .filter((t) => t.status !== 'done')
+      .filter((t) => t.status !== 'done' && this.getTaskState(t) !== 'expired' && !this.isProjectPaused(t.projectId))
       .sort((a, b) => order[this.getTaskState(a)] - order[this.getTaskState(b)]);
   }
 
@@ -65,17 +76,21 @@ export class MyTasksComponent implements OnInit {
     switch (this.activeFilter) {
       case 'active':    return sorted.filter((t) => { const s = this.getTaskState(t); return s === 'normal' || s === 'none'; });
       case 'warning':   return sorted.filter((t) => this.getTaskState(t) === 'warning');
-      case 'expired':   return sorted.filter((t) => this.getTaskState(t) === 'expired');
+      case 'expired':   return [];
       case 'completed': return [];
       default:          return sorted;
     }
   }
 
+  get expiredTasks(): Task[] {
+    return this.myTasks.filter((t) => t.status !== 'done' && this.getTaskState(t) === 'expired' && !this.isProjectPaused(t.projectId));
+  }
+
   get warningCount(): number {
-    return this.myTasks.filter((t) => t.status !== 'done' && this.getTaskState(t) === 'warning').length;
+    return this.myTasks.filter((t) => t.status !== 'done' && this.getTaskState(t) === 'warning' && !this.isProjectPaused(t.projectId)).length;
   }
   get expiredCount(): number {
-    return this.myTasks.filter((t) => t.status !== 'done' && this.getTaskState(t) === 'expired').length;
+    return this.expiredTasks.length;
   }
 
   get emptyFilterMessage(): string {
@@ -91,6 +106,19 @@ export class MyTasksComponent implements OnInit {
   setFilter(f: typeof this.activeFilter) {
     this.activeFilter = f;
     if (f === 'completed') this.showCompleted = true;
+    if (f === 'expired') this.showExpired = true;
+  }
+
+  toggleExpired() { this.showExpired = !this.showExpired; }
+
+  // ── Срочность (Часть 2A ТЗ) ─────────────────────────────────────────────────
+
+  getUrgency(task: Task): UrgencyLevel | null {
+    return this.urgencyService.getLevel(task.dueDate);
+  }
+
+  getUrgencyLabel(task: Task): string {
+    return this.urgencyService.getLabel(task.dueDate);
   }
 
   get productivity(): number {
@@ -134,10 +162,9 @@ export class MyTasksComponent implements OnInit {
     return this.getTaskState(task) !== 'expired';
   }
 
-  /** Paused projects block all deletes. Expired tasks: only project owner can delete. */
+  /** Paused projects block all deletes. Personal tasks (no project) can always be deleted; project tasks — only by the project owner. */
   canDeleteTask(task: Task): boolean {
     if (this.isProjectPaused(task.projectId)) return false;
-    if (this.getTaskState(task) !== 'expired') return true;
     if (!task.projectId) return true;
     return this.projectsMap[task.projectId]?.ownerId === this.currentUser?.id;
   }

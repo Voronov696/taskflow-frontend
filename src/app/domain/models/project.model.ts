@@ -3,6 +3,6 @@ export interface Project {
   name: string;
   description: string;
   ownerId: string;
-  dueDate?: string;
+  dueDate?: string | null;
   status: 'active' | 'paused' | 'completed';
 }

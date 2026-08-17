@@ -99,8 +99,9 @@
   <!-- ACTIVE TASKS (sorted + filtered) -->
   <div class="task-list" *ngIf="filteredActiveTasks.length > 0">
     <div class="task-card"
-         [class.state-warning]="getTaskState(task) === 'warning'"
-         [class.state-expired]="getTaskState(task) === 'expired'"
+         [class.state-soon]="getUrgency(task) === 'soon'"
+         [class.state-urgent]="getUrgency(task) === 'urgent'"
+         [class.is-others]="isOthersTask(task)"
          *ngFor="let task of filteredActiveTasks">
 
       <div class="task-main">
@@ -121,16 +122,21 @@
               {{ getMemberName(task.assignedUserId) }}
             </span>
             <span class="deadline-badge"
-                  [class.state-none]="getTaskState(task) === 'none'"
-                  [class.state-normal]="getTaskState(task) === 'normal'"
-                  [class.state-warning]="getTaskState(task) === 'warning'"
-                  [class.state-expired]="getTaskState(task) === 'expired'">
+                  [class.state-none]="!task.dueDate"
+                  [class.state-normal]="getUrgency(task) === 'normal'"
+                  [class.state-soon]="getUrgency(task) === 'soon'"
+                  [class.state-urgent]="getUrgency(task) === 'urgent'"
+                  [class.state-overdue]="getUrgency(task) === 'overdue'">
               <i class="ti"
-                 [class.ti-calendar-off]="getTaskState(task) === 'none'"
-                 [class.ti-calendar]="getTaskState(task) === 'normal'"
-                 [class.ti-alert-triangle]="getTaskState(task) === 'warning'"
-                 [class.ti-clock-x]="getTaskState(task) === 'expired'"></i>
-              {{ getDeadlineLabel(task) }}
+                 [class.ti-calendar-off]="!task.dueDate"
+                 [class.ti-calendar]="getUrgency(task) === 'normal'"
+                 [class.ti-alert-triangle]="getUrgency(task) === 'soon'"
+                 [class.ti-flame]="getUrgency(task) === 'urgent'"
+                 [class.ti-clock-x]="getUrgency(task) === 'overdue'"></i>
+              {{ task.dueDate ? (getUrgencyLabel(task) || formatDueDate(task.dueDate)) : 'No deadline' }}
+            </span>
+            <span class="others-tag" *ngIf="isOthersTask(task)" title="Assigned to someone else">
+              <i class="ti ti-user-question"></i> Not yours
             </span>
           </div>
         </div>
@@ -171,12 +177,54 @@
 
   <!-- EMPTY STATE -->
   <div class="empty-hint"
-       *ngIf="filteredActiveTasks.length === 0 && activeFilter !== 'completed'">
+       *ngIf="filteredActiveTasks.length === 0 && activeFilter !== 'completed' && activeFilter !== 'expired'">
     <i class="ti ti-clipboard"></i>
     <span>{{ emptyFilterMessage }}</span>
     <span class="empty-sub" *ngIf="tasks.length === 0 && isOwner">
       Use the row above to add your first task.
     </span>
+  </div>
+
+  <!-- EXPIRED ACCORDION (archive — Часть 3 ТЗ) -->
+  <div class="completed-section" *ngIf="expiredTasks.length > 0">
+    <div class="accordion-header" (click)="toggleExpired()">
+      <div class="accordion-left">
+        <i class="ti"
+           [class.ti-chevron-right]="!showExpired"
+           [class.ti-chevron-down]="showExpired"></i>
+        <span>Overdue ({{ expiredTasks.length }})</span>
+      </div>
+      <div class="accordion-line"></div>
+    </div>
+
+    <div class="completed-list" *ngIf="showExpired">
+      <div class="task-card archived" *ngFor="let task of expiredTasks">
+        <div class="task-main">
+          <div class="checkbox locked" title="Deadline expired — cannot complete">
+            <i class="ti ti-lock"></i>
+          </div>
+          <div class="task-info">
+            <strong>{{ task.title }}</strong>
+            <div class="task-meta-row">
+              <span class="assignee" *ngIf="task.assignedUserId">
+                <i class="ti ti-user"></i>
+                {{ getMemberName(task.assignedUserId) }}
+              </span>
+              <span class="deadline-badge state-overdue">
+                <i class="ti ti-clock-x"></i>
+                {{ getUrgencyLabel(task) }}
+              </span>
+            </div>
+          </div>
+          <div class="task-side">
+            <button class="delete-task-btn" *ngIf="canDeleteTask(task)"
+                    (click)="deleteTask(task.id)" title="Delete task">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- COMPLETED ACCORDION -->

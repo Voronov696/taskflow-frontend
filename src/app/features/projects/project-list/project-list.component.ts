@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { ProjectRepository } from '../../../domain/repositories/project.repository';
 import { AuthService } from '../../../core/auth/auth.service';
+import { UrgencyService, UrgencyLevel } from '../../../core/urgency/urgency.service';
 import { Project } from '../../../domain/models/project.model';
 import { Task } from '../../../domain/models/task.model';
 import { User } from '../../../domain/models/user.model';
@@ -37,14 +38,15 @@ export class ProjectListComponent implements OnInit {
   newProjectDescription = '';
   newProjectDueDate = '';
   searchQuery = '';
-  activeFilter: 'all' | 'active' | 'paused' | 'done' = 'all';
+  activeFilter: 'all' | 'active' | 'archived' | 'done' = 'all';
   openMenuId: string | null = null;
   showCompletedProjects = false;
-  showPausedProjects = false;
+  showArchivedProjects = false;
 
   constructor(
     private projectRepo: ProjectRepository,
     private authService: AuthService,
+    private urgencyService: UrgencyService,
     private router: Router,
     private http: HttpClient,
   ) {}
@@ -63,7 +65,7 @@ export class ProjectListComponent implements OnInit {
       this.buildCards();
     });
 
-    this.projectRepo.getByOwner(this.currentUser.id).subscribe((projects: Project[]) => {
+    this.projectRepo.getMine().subscribe((projects: Project[]) => {
       this.projectCards = projects.map((p) => ({
         project: p, progress: 0, totalTasks: 0, doneTasks: 0, memberInitials: [],
       }));
@@ -95,15 +97,23 @@ export class ProjectListComponent implements OnInit {
     return this.projectCards.filter(
       (c) => this.matchesSearch(c) &&
              c.project.status === 'active' &&
+             !this.isOverdue(c.project) &&
              (this.activeFilter === 'all' || this.activeFilter === 'active'),
     );
   }
 
-  get pausedCards(): ProjectCard[] {
+  /**
+   * Архив (Часть 3 ТЗ) — приостановленные ПРОЕКТЫ (status='paused') и
+   * просроченные активные (dueDate в прошлом), в одной сворачиваемой секции.
+   * Завершённые (status='completed') сюда не входят — это не архив,
+   * а штатно закрытые проекты, у них своя секция (completedCards).
+   */
+  get archivedCards(): ProjectCard[] {
     return this.projectCards.filter(
       (c) => this.matchesSearch(c) &&
-             c.project.status === 'paused' &&
-             (this.activeFilter === 'all' || this.activeFilter === 'paused'),
+             c.project.status !== 'completed' &&
+             (c.project.status === 'paused' || this.isOverdue(c.project)) &&
+             (this.activeFilter === 'all' || this.activeFilter === 'archived'),
     );
   }
 
@@ -119,7 +129,7 @@ export class ProjectListComponent implements OnInit {
     return (
       !!this.searchQuery &&
       this.activeCards.length === 0 &&
-      this.pausedCards.length === 0 &&
+      this.archivedCards.length === 0 &&
       this.completedCards.length === 0
     );
   }
@@ -130,12 +140,36 @@ export class ProjectListComponent implements OnInit {
 
   setFilter(f: typeof this.activeFilter) {
     this.activeFilter = f;
-    if (f === 'done')   this.showCompletedProjects = true;
-    if (f === 'paused') this.showPausedProjects = true;
+    if (f === 'done')     this.showCompletedProjects = true;
+    if (f === 'archived') this.showArchivedProjects = true;
   }
 
   toggleCompletedProjects() { this.showCompletedProjects = !this.showCompletedProjects; }
-  togglePausedProjects()    { this.showPausedProjects    = !this.showPausedProjects; }
+  toggleArchivedProjects()  { this.showArchivedProjects  = !this.showArchivedProjects; }
+
+  // ── Urgency and shared projects (Part 2A / 2B of the spec) ─────────────────
+
+  getUrgency(project: Project): UrgencyLevel | null {
+    return this.urgencyService.getLevel(project.dueDate ?? null);
+  }
+
+  getUrgencyLabel(project: Project): string {
+    return this.urgencyService.getLabel(project.dueDate ?? null);
+  }
+
+  isOverdue(project: Project): boolean {
+    return this.getUrgency(project) === 'overdue';
+  }
+
+  /** A project where I'm not the owner — I'm just a member (shared project). */
+  isShared(project: Project): boolean {
+    return !!this.currentUser && project.ownerId !== this.currentUser.id;
+  }
+
+  /** Only the project owner can delete/pause it — members cannot. */
+  isOwner(project: Project): boolean {
+    return !!this.currentUser && project.ownerId === this.currentUser.id;
+  }
 
   // ── Create project ────────────────────────────────────────────────────────
 
