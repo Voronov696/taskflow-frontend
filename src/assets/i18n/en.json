@@ -1,0 +1,427 @@
+{
+  "nav": {
+    "main": "Main",
+    "account": "Account",
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "myTasks": "My Tasks",
+    "team": "Team",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Log out",
+    "member": "Member"
+  },
+  "dashboard": {
+    "topbar": {
+      "greeting": "Good morning, {{name}} 👋",
+      "tasksPending": "{{count}} tasks pending",
+      "invite": "Invite",
+      "newProject": "New Project"
+    },
+    "stats": {
+      "activeProjects": "Active projects",
+      "tasksPending": "Tasks pending",
+      "completed": "Completed"
+    },
+    "focus": {
+      "title": "Today's Focus Score",
+      "label": {
+        "restWell": "Well deserved rest!",
+        "aboveBeyond": "Going above & beyond!",
+        "perfect": "Perfect day!",
+        "great": "Great progress!",
+        "solid": "Solid work!",
+        "keepItUp": "Keep it up!",
+        "roomToImprove": "Room to improve"
+      },
+      "breakdown": {
+        "noTasksScheduled": "No tasks scheduled today",
+        "noTasksPlanned": "No tasks planned today",
+        "plannedCompleted": "{{done}} of {{total}} planned completed",
+        "bonusTask": "+{{count}} bonus task",
+        "bonusTasks": "+{{count}} bonus tasks",
+        "overduePenalised": "{{count}} overdue task penalised",
+        "overduePenalisedPlural": "{{count}} overdue tasks penalised"
+      },
+      "trend7Day": "7-day streak",
+      "noDataYet": "no data yet",
+      "planned": "Planned",
+      "doneToday": "Done today",
+      "bonus": "Bonus",
+      "overdue": "Overdue"
+    },
+    "panels": {
+      "recentProjects": "Recent projects",
+      "viewAll": "View all →",
+      "noProjectsYet": "No projects yet.",
+      "createOne": "Create one →",
+      "noDescription": "No description",
+      "taskSummary": "Task summary",
+      "todo": "To do",
+      "completed": "Completed",
+      "total": "Total",
+      "upNext": "Up next",
+      "allTasksLink": "All tasks →",
+      "noPendingTasks": "No pending tasks. Great work!",
+      "upcomingDeadlines": "Upcoming deadlines",
+      "noUpcomingDeadlines": "No upcoming deadlines 🎉",
+      "project": "Project",
+      "personal": "Personal",
+      "unknown": "Unknown",
+      "todoBadge": "todo"
+    },
+    "friendModal": {
+      "title": "Find a Friend",
+      "description": "Enter someone's exact name or email address to find them.",
+      "namePlaceholder": "Name or email…",
+      "searching": "Searching…",
+      "search": "Search",
+      "noUserFound": "No user found with that name or email.",
+      "friends": "Friends",
+      "requested": "Requested",
+      "add": "Add",
+      "requestSent": "Friend request sent to {{name}}!",
+      "close": "Close"
+    },
+    "newProjectModal": {
+      "title": "New Project",
+      "nameLabel": "Project name",
+      "namePlaceholder": "e.g. Build a Car",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What is this project about?",
+      "cancel": "Cancel",
+      "create": "Create"
+    }
+  },
+  "urgency": {
+    "overdue": "Overdue",
+    "today": "Today",
+    "daysLeft": "{{count}} day left",
+    "daysLeftPlural": "{{count}} days left"
+  },
+  "deadline": {
+    "noDeadline": "No deadline",
+    "expired": "Expired",
+    "dueToday": "Due today",
+    "daysLeftShort": "{{count}}d left"
+  },
+  "projects": {
+    "list": {
+      "title": "Projects",
+      "projectCount": "{{count}} project",
+      "projectCountPlural": "{{count}} projects",
+      "newProject": "New Project",
+      "searchPlaceholder": "Search projects…",
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "archive": "Archive",
+        "completed": "Completed"
+      },
+      "noSearchResults": "No projects match \"{{query}}\"",
+      "card": {
+        "statusActive": "Active",
+        "sharedTooltip": "You're a member, not the owner",
+        "moreActions": "More actions",
+        "changeDueDate": "Change due date",
+        "pauseProject": "Pause project",
+        "deleteProject": "Delete project",
+        "noDescription": "No description provided.",
+        "due": "Due",
+        "taskInfo": "{{total}} tasks · {{done}} done"
+      },
+      "newProjectTile": "New project",
+      "noActiveProjects": "No active projects.",
+      "archive": {
+        "header": "Archive ({{count}})",
+        "statusPaused": "Paused",
+        "statusOverdue": "Overdue",
+        "frozenNotice": "Task actions frozen — unpause to continue",
+        "wasDue": "Was due",
+        "unpauseProject": "Unpause project"
+      },
+      "completed": {
+        "header": "Completed Projects ({{count}})",
+        "statusCompleted": "Completed"
+      },
+      "modal": {
+        "title": "New Project",
+        "nameLabel": "Project name",
+        "namePlaceholder": "e.g. Build a Car",
+        "descriptionLabel": "Description",
+        "optional": "optional",
+        "descriptionPlaceholder": "What is this project about?",
+        "dueDateLabel": "Due date",
+        "cancel": "Cancel",
+        "create": "Create"
+      },
+      "dueDateModal": {
+        "title": "Change due date",
+        "dueDateHint": "leave empty to remove the due date",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "confirmDelete": "Delete this project? This cannot be undone.",
+      "confirmPause": "Pause this project? All task due dates will be cleared."
+    },
+    "detail": {
+      "backToProjects": "Back to Projects",
+      "pausedBanner": {
+        "title": "Project paused",
+        "description": "All task actions are frozen. Task due dates have been cleared.",
+        "unpause": "Unpause"
+      },
+      "inlineCreate": {
+        "namePlaceholder": "New task name…",
+        "dueDateTooltip": "Due date (required)",
+        "addTooltip": "Add task (Enter)"
+      },
+      "unassigned": "Unassigned",
+      "unknown": "Unknown",
+      "youSuffix": "{{name}} (You)",
+      "errors": {
+        "nameRequired": "Task name is required.",
+        "dueDateRequired": "Due date is required.",
+        "createFailed": "Failed to create task. Is JSON Server running?"
+      },
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "warning": "Warning",
+        "expired": "Expired",
+        "completed": "Completed"
+      },
+      "checkboxTooltip": {
+        "expired": "Deadline expired — cannot complete",
+        "markTodo": "Mark as to-do",
+        "markDone": "Mark as done",
+        "paused": "Project is paused — actions frozen",
+        "expiredUndo": "Deadline expired — cannot undo"
+      },
+      "notYours": "Not yours",
+      "notYoursTooltip": "Assigned to someone else",
+      "editTooltip": "Edit due date / assignee",
+      "deleteTaskTooltip": "Delete task",
+      "save": "Save",
+      "cancel": "Cancel",
+      "newDueDateTooltip": "New due date",
+      "emptyMessages": {
+        "active": "No active tasks with normal deadlines.",
+        "warning": "No tasks with upcoming deadlines.",
+        "expired": "No expired tasks.",
+        "completed": "No completed tasks yet.",
+        "default": "No tasks yet."
+      },
+      "emptyHintFirstTask": "Use the row above to add your first task.",
+      "expiredHeader": "Overdue ({{count}})",
+      "completedHeader": "Completed ({{count}})",
+      "doneBadge": "done",
+      "confirmDeleteTask": "Delete this task?"
+    }
+  },
+  "myTasks": {
+    "title": "My Tasks",
+    "subtitle": "Your personal workspace — track everything assigned to you.",
+    "stats": {
+      "warning": "{{count}} warning",
+      "expired": "{{count}} expired",
+      "done": "{{count}} done"
+    },
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "warning": "Warning",
+      "expired": "Expired",
+      "completed": "Completed"
+    },
+    "emptyState": {
+      "title": "No tasks assigned to you yet.",
+      "description": "Tasks assigned to you in any project will appear here."
+    },
+    "checkboxTooltip": {
+      "paused": "Project is paused — actions frozen",
+      "expired": "Deadline expired — cannot complete",
+      "markTodo": "Mark as to-do",
+      "markDone": "Mark as done"
+    },
+    "projectPausedTooltip": "Project paused",
+    "deleteTooltip": "Delete",
+    "emptyMessages": {
+      "active": "No active tasks with normal deadlines.",
+      "warning": "No tasks with upcoming deadlines.",
+      "expired": "No expired tasks.",
+      "completed": "No completed tasks yet.",
+      "default": "No tasks assigned to you yet."
+    },
+    "expiredHeader": "Overdue ({{count}})",
+    "completedHeader": "Completed tasks ({{count}})",
+    "doneBadge": "done",
+    "personalProject": "Personal",
+    "confirmDeleteTask": "Delete this task?"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account, appearance and preferences.",
+    "nav": {
+      "profile": "Profile",
+      "appearance": "Appearance",
+      "notifications": "Notifications",
+      "security": "Security",
+      "dangerZone": "Danger zone"
+    },
+    "profile": {
+      "title": "Profile",
+      "subtitle": "This is how others see you in the workspace.",
+      "unsavedChanges": "Unsaved changes",
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Your name",
+      "email": "Email address",
+      "emailPlaceholder": "your@email.com",
+      "birthday": "Birthday",
+      "optional": "optional",
+      "saveChanges": "Save changes",
+      "errors": {
+        "emptyFields": "Name and email cannot be empty.",
+        "emailTaken": "That email is already used by another account.",
+        "emailCheckFailed": "Could not verify email uniqueness. Try again.",
+        "saveFailed": "Failed to save."
+      },
+      "saveSuccess": "Profile saved successfully."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "subtitle": "Customize how TaskFlow looks for you.",
+      "accentColor": "Accent color",
+      "accentColorDesc": "Used for buttons, active states, and highlights.",
+      "language": "Language",
+      "languageDesc": "Interface language."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Choose what you want to be notified about.",
+      "taskAssigned": { "label": "Task assigned to me", "desc": "When someone assigns a task to you" },
+      "projectUpdates": { "label": "Project updates", "desc": "When a project you're in is updated" },
+      "weeklySummary": { "label": "Weekly summary", "desc": "A weekly overview of your productivity" },
+      "savePreferences": "Save preferences",
+      "saveSuccess": "Notification preferences saved."
+    },
+    "security": {
+      "title": "Security",
+      "subtitle": "Update your password to keep your account secure.",
+      "userId": "User ID",
+      "email": "Email",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "At least 6 characters",
+      "confirmPassword": "Confirm new password",
+      "confirmPasswordPlaceholder": "Repeat new password",
+      "updatePassword": "Update password",
+      "errors": {
+        "currentRequired": "Please enter your current password.",
+        "tooShort": "New password must be at least 6 characters.",
+        "mismatch": "Passwords do not match.",
+        "wrongCurrent": "Current password is incorrect.",
+        "updateFailed": "Failed to update password."
+      },
+      "updateSuccess": "Password changed successfully."
+    },
+    "danger": {
+      "title": "Danger zone",
+      "subtitle": "These actions are permanent and cannot be undone.",
+      "signOut": { "title": "Sign out", "desc": "End your current session on this device.", "button": "Sign out" },
+      "deleteAccount": { "title": "Delete account", "desc": "Permanently delete your account and all associated data.", "button": "Delete account" },
+      "confirmTitle": "Are you absolutely sure?",
+      "confirmDesc": "This will permanently delete your account. This cannot be undone.",
+      "confirmButton": "Yes, delete my account",
+      "cancel": "Cancel",
+      "deleteFailed": "Failed to delete account."
+    }
+  },
+  "team": {
+    "title": "Team",
+    "subtitle": "People you've connected with on Taskflow.",
+    "addFriend": "Add Friend",
+    "requestsHeading": "Friend requests",
+    "accept": "Accept",
+    "decline": "Decline",
+    "emptyState": {
+      "title": "No connections yet",
+      "description": "Search for someone by their exact name or email to connect"
+    },
+    "roleFriend": "Friend",
+    "removeTooltip": "Remove from team",
+    "copied": "Copied!",
+    "copyEmail": "Copy email",
+    "activeTasks": "{{count}} active tasks",
+    "doneTasks": "{{count}} done",
+    "searchModal": {
+      "title": "Find a Friend",
+      "description": "Enter someone's exact name or email address to find them.",
+      "placeholder": "Exact name or email…",
+      "searching": "Searching…",
+      "search": "Search",
+      "noUserFound": "No user found with that exact name or email.",
+      "friends": "Friends",
+      "requested": "Requested",
+      "add": "Add",
+      "requestSent": "Friend request sent to {{name}}!",
+      "close": "Close"
+    },
+    "confirmRemove": "Remove this person from your team?"
+  },
+  "auth": {
+    "login": {
+      "heroLine1": "Welcome Back to",
+      "heroLine2": "TaskFlow",
+      "heroSubtitle": "Streamline your projects, collaborate seamlessly, and achieve more with our powerful project management platform.",
+      "features": {
+        "manage": "Manage projects and tasks effortlessly",
+        "collaborate": "Real-time collaboration with your team",
+        "track": "Track progress with detailed analytics",
+        "customize": "Customizable workflows and automation"
+      },
+      "formTitle": "Sign in to your account",
+      "formSubtitle": "Welcome back! Please enter your details.",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up for free",
+      "errors": {
+        "wrongCredentials": "Wrong email or password.",
+        "generic": "Something went wrong. Try again."
+      }
+    },
+    "register": {
+      "heroLine1": "Start managing",
+      "heroLine2": "your work today.",
+      "heroSubtitle": "Join TaskFlow and get your team organized. Create projects, assign tasks, and collaborate — all in one place.",
+      "features": {
+        "free": "Free to use, no credit card needed",
+        "setup": "Set up your workspace in minutes",
+        "invite": "Invite your team and start collaborating"
+      },
+      "formTitle": "Create your account",
+      "formSubtitle": "Get started with TaskFlow for free.",
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "At least 6 characters",
+      "submit": "Create account",
+      "checking": "Checking…",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in instead",
+      "errors": {
+        "missingFields": "Please fill in all fields.",
+        "passwordTooShort": "Password must be at least 6 characters.",
+        "emailTaken": "This email is already taken.",
+        "generic": "Registration failed. Try again."
+      }
+    }
+  }
+}

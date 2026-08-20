@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../domain/models/user.model';
 import { filter } from 'rxjs';
@@ -8,7 +9,7 @@ import { filter } from 'rxjs';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'
 })
@@ -18,10 +19,10 @@ export class ShellComponent implements OnInit {
   showUserMenu = false;
 
   navItems = [
-    { label: 'Dashboard', icon: 'ti-dashboard', route: 'dashboard' },
-    { label: 'Projects',  icon: 'ti-folder',    route: 'projects'  },
-    { label: 'My Tasks',  icon: 'ti-checklist', route: 'my-tasks'  },
-    { label: 'Team',      icon: 'ti-users',      route: 'team'      },
+    { labelKey: 'nav.dashboard', icon: 'ti-dashboard', route: 'dashboard' },
+    { labelKey: 'nav.projects',  icon: 'ti-folder',    route: 'projects'  },
+    { labelKey: 'nav.myTasks',   icon: 'ti-checklist', route: 'my-tasks'  },
+    { labelKey: 'nav.team',      icon: 'ti-users',      route: 'team'      },
   ];
 
   constructor(private authService: AuthService, private router: Router) {}

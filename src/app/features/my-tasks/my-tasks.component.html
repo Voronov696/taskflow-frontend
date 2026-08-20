@@ -1,17 +1,17 @@
 <div class="my-tasks">
   <div class="page-header">
     <div>
-      <h1>My Tasks</h1>
-      <p class="subtitle">Your personal workspace — track everything assigned to you.</p>
+      <h1>{{ 'myTasks.title' | translate }}</h1>
+      <p class="subtitle">{{ 'myTasks.subtitle' | translate }}</p>
     </div>
     <div class="header-stats">
       <div class="stat-pill warning" *ngIf="warningCount > 0">
-        <i class="ti ti-alert-triangle"></i> {{ warningCount }} warning
+        <i class="ti ti-alert-triangle"></i> {{ 'myTasks.stats.warning' | translate:{ count: warningCount } }}
       </div>
       <div class="stat-pill expired" *ngIf="expiredCount > 0">
-        <i class="ti ti-clock-x"></i> {{ expiredCount }} expired
+        <i class="ti ti-clock-x"></i> {{ 'myTasks.stats.expired' | translate:{ count: expiredCount } }}
       </div>
-      <div class="stat-pill green">{{ completedTasks.length }} done</div>
+      <div class="stat-pill green">{{ 'myTasks.stats.done' | translate:{ count: completedTasks.length } }}</div>
       <div class="productivity-wrap">
         <svg viewBox="0 0 36 36" width="48" height="48">
           <circle cx="18" cy="18" r="15.9"
@@ -31,17 +31,17 @@
   <div class="filter-bar" *ngIf="myTasks.length > 0">
     <button class="filter-pill"
             [class.active]="activeFilter === 'all'"
-            (click)="setFilter('all')">All</button>
+            (click)="setFilter('all')">{{ 'myTasks.filters.all' | translate }}</button>
 
     <button class="filter-pill"
             [class.active]="activeFilter === 'active'"
-            (click)="setFilter('active')">Active</button>
+            (click)="setFilter('active')">{{ 'myTasks.filters.active' | translate }}</button>
 
     <button class="filter-pill warning-pill"
             [class.active]="activeFilter === 'warning'"
             (click)="setFilter('warning')">
       <i class="ti ti-alert-triangle"></i>
-      Warning
+      {{ 'myTasks.filters.warning' | translate }}
       <span class="pill-count" *ngIf="warningCount > 0">{{ warningCount }}</span>
     </button>
 
@@ -49,7 +49,7 @@
             [class.active]="activeFilter === 'expired'"
             (click)="setFilter('expired')">
       <i class="ti ti-clock-x"></i>
-      Expired
+      {{ 'myTasks.filters.expired' | translate }}
       <span class="pill-count" *ngIf="expiredCount > 0">{{ expiredCount }}</span>
     </button>
 
@@ -57,7 +57,7 @@
             [class.active]="activeFilter === 'completed'"
             (click)="setFilter('completed')">
       <i class="ti ti-circle-check"></i>
-      Completed
+      {{ 'myTasks.filters.completed' | translate }}
       <span class="pill-count" *ngIf="completedTasks.length > 0">{{ completedTasks.length }}</span>
     </button>
   </div>
@@ -65,8 +65,8 @@
   <!-- EMPTY STATE (no tasks at all) -->
   <div class="empty-state" *ngIf="myTasks.length === 0">
     <i class="ti ti-clipboard-check"></i>
-    <p>No tasks assigned to you yet.</p>
-    <span>Tasks assigned to you in any project will appear here.</span>
+    <p>{{ 'myTasks.emptyState.title' | translate }}</p>
+    <span>{{ 'myTasks.emptyState.description' | translate }}</span>
   </div>
 
   <!-- FILTERED TASK LIST (non-completed, sorted) -->
@@ -99,7 +99,7 @@
           {{ getProjectName(task.projectId) }}
           <i class="ti ti-pause proj-pause-icon"
              *ngIf="isProjectPaused(task.projectId)"
-             title="Project paused"></i>
+             [title]="'myTasks.projectPausedTooltip' | translate"></i>
         </span>
 
         <!-- Deadline badge -->
@@ -115,14 +115,14 @@
              [class.ti-alert-triangle]="getUrgency(task) === 'soon'"
              [class.ti-flame]="getUrgency(task) === 'urgent'"
              [class.ti-clock-x]="getUrgency(task) === 'overdue'"></i>
-          {{ task.dueDate ? (getUrgencyLabel(task) || formatDueDate(task.dueDate)) : 'No deadline' }}
+          {{ task.dueDate ? (getUrgencyLabel(task) || formatDueDate(task.dueDate)) : ('deadline.noDeadline' | translate) }}
         </span>
       </div>
 
       <!-- Actions -->
       <div class="task-actions">
         <button class="del-btn" *ngIf="canDeleteTask(task)"
-                (click)="deleteTask(task.id)" title="Delete">
+                (click)="deleteTask(task.id)" [title]="'myTasks.deleteTooltip' | translate">
           <i class="ti ti-trash"></i>
         </button>
       </div>
@@ -145,13 +145,13 @@
       <i class="ti"
          [class.ti-chevron-right]="!showExpired"
          [class.ti-chevron-down]="showExpired"></i>
-      <span>Overdue ({{ expiredTasks.length }})</span>
+      <span>{{ 'myTasks.expiredHeader' | translate:{ count: expiredTasks.length } }}</span>
       <div class="accordion-line"></div>
     </div>
 
     <div *ngIf="showExpired">
       <div class="task-row dimmed" *ngFor="let task of expiredTasks">
-        <div class="task-check locked" title="Deadline expired — cannot complete">
+        <div class="task-check locked" [title]="'myTasks.checkboxTooltip.expired' | translate">
           <i class="ti ti-lock"></i>
         </div>
         <span class="task-name">{{ task.title }}</span>
@@ -168,7 +168,7 @@
           </span>
         </div>
         <div class="task-actions">
-          <button class="del-btn" *ngIf="canDeleteTask(task)" (click)="deleteTask(task.id)" title="Delete">
+          <button class="del-btn" *ngIf="canDeleteTask(task)" (click)="deleteTask(task.id)" [title]="'myTasks.deleteTooltip' | translate">
             <i class="ti ti-trash"></i>
           </button>
         </div>
@@ -183,7 +183,7 @@
       <i class="ti"
          [class.ti-chevron-right]="!showCompleted"
          [class.ti-chevron-down]="showCompleted"></i>
-      <span>Completed tasks ({{ completedTasks.length }})</span>
+      <span>{{ 'myTasks.completedHeader' | translate:{ count: completedTasks.length } }}</span>
       <div class="accordion-line"></div>
     </div>
 
@@ -192,7 +192,7 @@
         <div class="task-check checked"
              [class.locked]="!canCompleteTask(task)"
              (click)="toggleTask(task)"
-             [title]="!canCompleteTask(task) ? getCheckboxTitle(task) : 'Mark as to-do'">
+             [title]="!canCompleteTask(task) ? getCheckboxTitle(task) : ('myTasks.checkboxTooltip.markTodo' | translate)">
           <i class="ti ti-check" *ngIf="canCompleteTask(task)"></i>
           <i class="ti ti-lock"  *ngIf="!canCompleteTask(task)"></i>
         </div>
@@ -206,8 +206,8 @@
           </span>
         </div>
         <div class="task-actions">
-          <span class="badge done">done</span>
-          <button class="del-btn" *ngIf="canDeleteTask(task)" (click)="deleteTask(task.id)" title="Delete">
+          <span class="badge done">{{ 'myTasks.doneBadge' | translate }}</span>
+          <button class="del-btn" *ngIf="canDeleteTask(task)" (click)="deleteTask(task.id)" [title]="'myTasks.deleteTooltip' | translate">
             <i class="ti ti-trash"></i>
           </button>
         </div>

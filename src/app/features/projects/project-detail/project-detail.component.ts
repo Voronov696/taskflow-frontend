@@ -2,10 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ProjectRepository } from '../../../domain/repositories/project.repository';
 import { TaskRepository } from '../../../domain/repositories/task.repository';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FriendshipService } from '../../../core/friendship/friendship.service';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { DeadlineService, TaskDeadlineState } from '../../../core/deadline/deadline.service';
 import { UrgencyService, UrgencyLevel } from '../../../core/urgency/urgency.service';
 import { Project } from '../../../domain/models/project.model';
@@ -15,7 +17,7 @@ import { User } from '../../../domain/models/user.model';
 @Component({
   selector: 'app-project-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './project-detail.component.html',
   styleUrl: './project-detail.component.scss',
 })
@@ -49,6 +51,8 @@ export class ProjectDetailComponent implements OnInit {
     private friendshipService: FriendshipService,
     private deadlineService: DeadlineService,
     private urgencyService: UrgencyService,
+    private translate: TranslateService,
+    private languageService: LanguageService,
   ) {}
 
   ngOnInit() {
@@ -113,11 +117,11 @@ export class ProjectDetailComponent implements OnInit {
 
   get emptyFilterMessage(): string {
     switch (this.activeFilter) {
-      case 'active':    return 'No active tasks with normal deadlines.';
-      case 'warning':   return 'No tasks with upcoming deadlines.';
-      case 'expired':   return 'No expired tasks.';
-      case 'completed': return 'No completed tasks yet.';
-      default:          return 'No tasks yet.';
+      case 'active':    return this.translate.instant('projects.detail.emptyMessages.active');
+      case 'warning':   return this.translate.instant('projects.detail.emptyMessages.warning');
+      case 'expired':   return this.translate.instant('projects.detail.emptyMessages.expired');
+      case 'completed': return this.translate.instant('projects.detail.emptyMessages.completed');
+      default:          return this.translate.instant('projects.detail.emptyMessages.default');
     }
   }
 
@@ -135,17 +139,17 @@ export class ProjectDetailComponent implements OnInit {
 
   getDeadlineLabel(task: Task): string {
     const state = this.getTaskState(task);
-    if (state === 'none') return 'No deadline';
-    if (state === 'expired') return 'Expired';
+    if (state === 'none') return this.translate.instant('deadline.noDeadline');
+    if (state === 'expired') return this.translate.instant('deadline.expired');
     const days = this.deadlineService.getDaysUntil(task.dueDate)!;
-    if (state === 'warning') return days === 0 ? 'Due today' : `${days}d left`;
+    if (state === 'warning') return days === 0 ? this.translate.instant('deadline.dueToday') : this.translate.instant('deadline.daysLeftShort', { count: days });
     return this.formatDueDate(task.dueDate);
   }
 
   formatDueDate(dueDate: string | null): string {
     if (!dueDate) return '';
     const [year, month, day] = dueDate.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('en-GB', {
+    return new Date(year, month - 1, day).toLocaleDateString(this.languageService.getIntlLocale(), {
       day: 'numeric',
       month: 'short',
     });
@@ -197,7 +201,7 @@ export class ProjectDetailComponent implements OnInit {
   deleteTask(taskId: string) {
     const task = this.tasks.find((t) => t.id === taskId);
     if (task && !this.canDeleteTask(task)) return;
-    if (!confirm('Delete this task?')) return;
+    if (!confirm(this.translate.instant('projects.detail.confirmDeleteTask'))) return;
     this.taskRepo.delete(taskId).subscribe(() => {
       this.tasks = this.tasks.filter((t) => t.id !== taskId);
     });
@@ -208,8 +212,8 @@ export class ProjectDetailComponent implements OnInit {
   createInlineTask() {
     if (this.isPaused) return;
     const title = this.inlineTaskTitle.trim();
-    if (!title) { this.inlineError = 'Task name is required.'; return; }
-    if (!this.inlineTaskDueDate) { this.inlineError = 'Due date is required.'; return; }
+    if (!title) { this.inlineError = this.translate.instant('projects.detail.errors.nameRequired'); return; }
+    if (!this.inlineTaskDueDate) { this.inlineError = this.translate.instant('projects.detail.errors.dueDateRequired'); return; }
     if (!this.project) return;
 
     this.inlineError = '';
@@ -229,7 +233,7 @@ export class ProjectDetailComponent implements OnInit {
           this.inlineTaskAssigneeId = '';
           this.loadTasks(this.project!.id);
         },
-        error: () => alert('Failed to create task. Is JSON Server running?'),
+        error: () => alert(this.translate.instant('projects.detail.errors.createFailed')),
       });
   }
 
@@ -272,9 +276,9 @@ export class ProjectDetailComponent implements OnInit {
   // ── Misc ──────────────────────────────────────────────────────────────────
 
   getMemberName(userId: string): string {
-    if (!userId) return 'Unassigned';
+    if (!userId) return this.translate.instant('projects.detail.unassigned');
     if (userId === this.currentUser?.id) return this.currentUser.name;
-    return this.friends.find((f) => f.id === userId)?.name ?? 'Unknown';
+    return this.friends.find((f) => f.id === userId)?.name ?? this.translate.instant('projects.detail.unknown');
   }
 
   unpauseFromDetail() {

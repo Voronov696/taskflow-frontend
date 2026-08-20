@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { LanguageService } from '../../core/i18n/language.service';
 import { TaskRepository } from '../../domain/repositories/task.repository';
 import { ProjectRepository } from '../../domain/repositories/project.repository';
 import { MemberRepository } from '../../domain/repositories/member.repository';
@@ -42,7 +44,7 @@ interface DeadlineItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -76,6 +78,8 @@ export class DashboardComponent implements OnInit {
     private urgencyService: UrgencyService,
     private router: Router,
     private http: HttpClient,
+    private translate: TranslateService,
+    private languageService: LanguageService,
   ) {}
 
   ngOnInit() {
@@ -138,8 +142,9 @@ export class DashboardComponent implements OnInit {
   }
 
   get todayDate(): string {
-    const d = new Date();
-    return `${d.toLocaleDateString('en-GB', { weekday: 'long' })}, ${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'long' })} ${d.getFullYear()}`;
+    return new Date().toLocaleDateString(this.languageService.getIntlLocale(), {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
   }
 
   get recentProjects(): Project[] { return this.myProjects.slice(0, 4); }
@@ -151,8 +156,9 @@ export class DashboardComponent implements OnInit {
   }
 
   getProjectNameById(projectId: string | null): string {
-    if (!projectId) return 'Personal';
-    return this.myProjects.find((p) => p.id === projectId)?.name ?? 'Unknown';
+    if (!projectId) return this.translate.instant('dashboard.panels.personal');
+    return this.myProjects.find((p) => p.id === projectId)?.name
+      ?? this.translate.instant('dashboard.panels.unknown');
   }
 
   // ── "Дедлайны на подходе" (Часть 2C ТЗ) ─────────────────────────────────────
@@ -272,14 +278,14 @@ export class DashboardComponent implements OnInit {
     const totalDue = this.tasksDueToday.length;
     const extra = this.extraCompletedToday.length;
     const overdue = this.overdueActiveTasks.length;
-    if (totalDue === 0 && extra === 0 && overdue === 0) return 'Well deserved rest!';
-    if (totalDue === 0 && extra > 0) return 'Going above & beyond!';
+    if (totalDue === 0 && extra === 0 && overdue === 0) return this.translate.instant('dashboard.focus.label.restWell');
+    if (totalDue === 0 && extra > 0) return this.translate.instant('dashboard.focus.label.aboveBeyond');
     const s = this.dailyScore;
-    if (s >= 100) return 'Perfect day!';
-    if (s >= 80) return 'Great progress!';
-    if (s >= 60) return 'Solid work!';
-    if (s >= 40) return 'Keep it up!';
-    return 'Room to improve';
+    if (s >= 100) return this.translate.instant('dashboard.focus.label.perfect');
+    if (s >= 80) return this.translate.instant('dashboard.focus.label.great');
+    if (s >= 60) return this.translate.instant('dashboard.focus.label.solid');
+    if (s >= 40) return this.translate.instant('dashboard.focus.label.keepItUp');
+    return this.translate.instant('dashboard.focus.label.roomToImprove');
   }
 
   get scoreBreakdown(): string {
@@ -290,12 +296,12 @@ export class DashboardComponent implements OnInit {
     const parts: string[] = [];
 
     if (totalDue === 0 && extra === 0) {
-      parts.push(overdue === 0 ? 'No tasks scheduled today' : 'No tasks planned today');
+      parts.push(this.translate.instant(overdue === 0 ? 'dashboard.focus.breakdown.noTasksScheduled' : 'dashboard.focus.breakdown.noTasksPlanned'));
     } else {
-      if (totalDue > 0) parts.push(`${completedDue} of ${totalDue} planned completed`);
-      if (extra > 0) parts.push(`+${extra} bonus task${extra > 1 ? 's' : ''}`);
+      if (totalDue > 0) parts.push(this.translate.instant('dashboard.focus.breakdown.plannedCompleted', { done: completedDue, total: totalDue }));
+      if (extra > 0) parts.push(this.translate.instant(extra > 1 ? 'dashboard.focus.breakdown.bonusTasks' : 'dashboard.focus.breakdown.bonusTask', { count: extra }));
     }
-    if (overdue > 0) parts.push(`${overdue} overdue task${overdue > 1 ? 's' : ''} penalised`);
+    if (overdue > 0) parts.push(this.translate.instant(overdue > 1 ? 'dashboard.focus.breakdown.overduePenalisedPlural' : 'dashboard.focus.breakdown.overduePenalised', { count: overdue }));
     return parts.join(' · ');
   }
 
@@ -338,7 +344,7 @@ export class DashboardComponent implements OnInit {
       return {
         date: dateStr,
         score: scores[dateStr] ?? null,
-        dayLabel: day.toLocaleDateString('en-US', { weekday: 'short' }),
+        dayLabel: day.toLocaleDateString(this.languageService.getIntlLocale(), { weekday: 'short' }),
         isToday: dateStr === today,
       };
     });

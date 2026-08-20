@@ -429,11 +429,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
 }
 
+.score-value { display: flex; align-items: flex-start; }
+
 .score-num  { font-size: 30px; font-weight: 700; color: #fff; line-height: 1; }
-.score-unit { font-size: 13px; color: #6b6f8a; align-self: flex-end; padding-bottom: 4px; }
+.score-unit { font-size: 16px; font-weight: 600; color: #6b6f8a; line-height: 1; margin-left: 1px; }
 
 /* Label + breakdown + trend ------------------------------------------------- */
 .score-details {

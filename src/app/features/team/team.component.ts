@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { FriendshipService, FriendSearchResult, IncomingRequest } from '../../core/friendship/friendship.service';
 import { User } from '../../domain/models/user.model';
@@ -18,7 +19,7 @@ interface FriendEntry {
 @Component({
   selector: 'app-team',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './team.component.html',
   styleUrl: './team.component.scss',
 })
@@ -41,6 +42,7 @@ export class TeamComponent implements OnInit {
     private authService: AuthService,
     private friendshipService: FriendshipService,
     private http: HttpClient,
+    private translate: TranslateService,
   ) {}
 
   ngOnInit() {
@@ -153,7 +155,7 @@ export class TeamComponent implements OnInit {
   removeFriend(friendUserId: string, event: Event) {
     event.stopPropagation();
     if (!this.currentUser) return;
-    if (!confirm('Remove this person from your team?')) return;
+    if (!confirm(this.translate.instant('team.confirmRemove'))) return;
 
     this.friendshipService.removeFriend(this.currentUser.id, friendUserId).subscribe(() => {
       this.friends = this.friends.filter((f) => f.user.id !== friendUserId);

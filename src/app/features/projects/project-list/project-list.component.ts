@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ProjectRepository } from '../../../domain/repositories/project.repository';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { UrgencyService, UrgencyLevel } from '../../../core/urgency/urgency.service';
 import { Project } from '../../../domain/models/project.model';
 import { Task } from '../../../domain/models/task.model';
@@ -23,7 +25,7 @@ interface ProjectCard {
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.scss',
 })
@@ -43,13 +45,23 @@ export class ProjectListComponent implements OnInit {
   showCompletedProjects = false;
   showArchivedProjects = false;
 
+  showDueDateModal = false;
+  dueDateProjectId: string | null = null;
+  dueDateValue = '';
+
   constructor(
     private projectRepo: ProjectRepository,
     private authService: AuthService,
     private urgencyService: UrgencyService,
     private router: Router,
     private http: HttpClient,
+    private translate: TranslateService,
+    private languageService: LanguageService,
   ) {}
+
+  get dateLocale(): string | undefined {
+    return this.languageService.getAngularLocale();
+  }
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
@@ -207,7 +219,7 @@ export class ProjectListComponent implements OnInit {
   deleteProject(id: string, event: Event) {
     event.stopPropagation();
     this.openMenuId = null;
-    if (!confirm('Delete this project? This cannot be undone.')) return;
+    if (!confirm(this.translate.instant('projects.list.confirmDelete'))) return;
     this.http.delete(`${environment.apiUrl}/projects/${id}`).subscribe(() => {
       this.projectCards = this.projectCards.filter((c) => c.project.id !== id);
     });
@@ -218,7 +230,7 @@ export class ProjectListComponent implements OnInit {
   pauseProject(id: string, event: Event) {
     event.stopPropagation();
     this.openMenuId = null;
-    if (!confirm('Pause this project? All task due dates will be cleared.')) return;
+    if (!confirm(this.translate.instant('projects.list.confirmPause'))) return;
 
     this.http.patch<Project>(`${environment.apiUrl}/projects/${id}`, { status: 'paused' })
       .subscribe(() => {
@@ -245,6 +257,33 @@ export class ProjectListComponent implements OnInit {
       .subscribe(() => {
         const card = this.projectCards.find((c) => c.project.id === id);
         if (card) card.project.status = 'active';
+      });
+  }
+
+  // ── Change due date ──────────────────────────────────────────────────────
+
+  openDueDateModal(project: Project, event: Event) {
+    event.stopPropagation();
+    this.openMenuId = null;
+    this.dueDateProjectId = project.id;
+    this.dueDateValue = project.dueDate ? project.dueDate.slice(0, 10) : '';
+    this.showDueDateModal = true;
+  }
+
+  closeDueDateModal() {
+    this.showDueDateModal = false;
+    this.dueDateProjectId = null;
+    this.dueDateValue = '';
+  }
+
+  saveDueDate() {
+    if (!this.dueDateProjectId) return;
+    const id = this.dueDateProjectId;
+    this.http.patch<Project>(`${environment.apiUrl}/projects/${id}`, { dueDate: this.dueDateValue || null })
+      .subscribe((updated) => {
+        const card = this.projectCards.find((c) => c.project.id === id);
+        if (card) card.project.dueDate = updated.dueDate;
+        this.closeDueDateModal();
       });
   }
 }

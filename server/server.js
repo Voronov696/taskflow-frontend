@@ -670,6 +670,18 @@ app.post('/projects', authenticateToken, async (req, res) => {
 // в SQL.
 app.patch('/projects/:id', authenticateToken, async (req, res) => {
   try {
+    // Same ownership check as DELETE /projects/:id — otherwise any logged-in
+    // project member (not just the owner) could edit the project just by
+    // knowing its id. req.user.id comes from the SIGNED token, so it can be
+    // trusted; owner_id is read from the database, not from body/URL.
+    const existing = await query('SELECT owner_id FROM projects WHERE id = $1', [req.params.id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (existing.rows[0].owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the project owner can update this project' });
+    }
+
     // Как и в PATCH /tasks/:id: если dueDate ПРИСУТСТВУЕТ в body, но пришла
     // пустой строкой (например, поле даты в форме очистили), в базу должен
     // уйти NULL, а не '' — иначе INSERT/UPDATE упадёт на приведении '' к DATE.

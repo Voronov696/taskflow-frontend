@@ -1,0 +1,427 @@
+{
+  "nav": {
+    "main": "Principal",
+    "account": "Compte",
+    "dashboard": "Tableau de bord",
+    "projects": "Projets",
+    "myTasks": "Mes tâches",
+    "team": "Équipe",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "logout": "Déconnexion",
+    "member": "Membre"
+  },
+  "dashboard": {
+    "topbar": {
+      "greeting": "Bonjour, {{name}} 👋",
+      "tasksPending": "{{count}} tâches en attente",
+      "invite": "Inviter",
+      "newProject": "Nouveau projet"
+    },
+    "stats": {
+      "activeProjects": "Projets actifs",
+      "tasksPending": "Tâches en attente",
+      "completed": "Terminées"
+    },
+    "focus": {
+      "title": "Score de concentration du jour",
+      "label": {
+        "restWell": "Repos bien mérité !",
+        "aboveBeyond": "Vous vous surpassez !",
+        "perfect": "Journée parfaite !",
+        "great": "Excellents progrès !",
+        "solid": "Beau travail !",
+        "keepItUp": "Continuez ainsi !",
+        "roomToImprove": "Peut mieux faire"
+      },
+      "breakdown": {
+        "noTasksScheduled": "Aucune tâche prévue aujourd'hui",
+        "noTasksPlanned": "Aucune tâche planifiée aujourd'hui",
+        "plannedCompleted": "{{done}} sur {{total}} tâches prévues terminées",
+        "bonusTask": "+{{count}} tâche bonus",
+        "bonusTasks": "+{{count}} tâches bonus",
+        "overduePenalised": "{{count}} tâche en retard pénalisée",
+        "overduePenalisedPlural": "{{count}} tâches en retard pénalisées"
+      },
+      "trend7Day": "Série de 7 jours",
+      "noDataYet": "aucune donnée pour l'instant",
+      "planned": "Prévues",
+      "doneToday": "Terminées aujourd'hui",
+      "bonus": "Bonus",
+      "overdue": "En retard"
+    },
+    "panels": {
+      "recentProjects": "Projets récents",
+      "viewAll": "Tout voir →",
+      "noProjectsYet": "Aucun projet pour l'instant.",
+      "createOne": "En créer un →",
+      "noDescription": "Aucune description",
+      "taskSummary": "Résumé des tâches",
+      "todo": "À faire",
+      "completed": "Terminées",
+      "total": "Total",
+      "upNext": "À venir",
+      "allTasksLink": "Toutes les tâches →",
+      "noPendingTasks": "Aucune tâche en attente. Excellent travail !",
+      "upcomingDeadlines": "Échéances à venir",
+      "noUpcomingDeadlines": "Aucune échéance à venir 🎉",
+      "project": "Projet",
+      "personal": "Personnel",
+      "unknown": "Inconnu",
+      "todoBadge": "à faire"
+    },
+    "friendModal": {
+      "title": "Trouver un ami",
+      "description": "Saisissez le nom exact ou l'adresse e-mail de la personne pour la trouver.",
+      "namePlaceholder": "Nom ou e-mail…",
+      "searching": "Recherche…",
+      "search": "Rechercher",
+      "noUserFound": "Aucun utilisateur trouvé avec ce nom ou cet e-mail.",
+      "friends": "Amis",
+      "requested": "Demande envoyée",
+      "add": "Ajouter",
+      "requestSent": "Demande d'ami envoyée à {{name}} !",
+      "close": "Fermer"
+    },
+    "newProjectModal": {
+      "title": "Nouveau projet",
+      "nameLabel": "Nom du projet",
+      "namePlaceholder": "ex. Construire une voiture",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "En quoi consiste ce projet ?",
+      "cancel": "Annuler",
+      "create": "Créer"
+    }
+  },
+  "urgency": {
+    "overdue": "En retard",
+    "today": "Aujourd'hui",
+    "daysLeft": "{{count}} jour restant",
+    "daysLeftPlural": "{{count}} jours restants"
+  },
+  "deadline": {
+    "noDeadline": "Aucune échéance",
+    "expired": "Expirée",
+    "dueToday": "À rendre aujourd'hui",
+    "daysLeftShort": "{{count}} j restants"
+  },
+  "projects": {
+    "list": {
+      "title": "Projets",
+      "projectCount": "{{count}} projet",
+      "projectCountPlural": "{{count}} projets",
+      "newProject": "Nouveau projet",
+      "searchPlaceholder": "Rechercher des projets…",
+      "filters": {
+        "all": "Tous",
+        "active": "Actifs",
+        "archive": "Archives",
+        "completed": "Terminés"
+      },
+      "noSearchResults": "Aucun projet ne correspond à « {{query}} »",
+      "card": {
+        "statusActive": "Actif",
+        "sharedTooltip": "Vous êtes membre, pas propriétaire",
+        "moreActions": "Plus d'actions",
+        "changeDueDate": "Modifier l'échéance",
+        "pauseProject": "Mettre en pause",
+        "deleteProject": "Supprimer le projet",
+        "noDescription": "Aucune description fournie.",
+        "due": "Échéance",
+        "taskInfo": "{{total}} tâches · {{done}} terminées"
+      },
+      "newProjectTile": "Nouveau projet",
+      "noActiveProjects": "Aucun projet actif.",
+      "archive": {
+        "header": "Archives ({{count}})",
+        "statusPaused": "En pause",
+        "statusOverdue": "En retard",
+        "frozenNotice": "Actions gelées — relancez le projet pour continuer",
+        "wasDue": "Échéance dépassée le",
+        "unpauseProject": "Relancer le projet"
+      },
+      "completed": {
+        "header": "Projets terminés ({{count}})",
+        "statusCompleted": "Terminé"
+      },
+      "modal": {
+        "title": "Nouveau projet",
+        "nameLabel": "Nom du projet",
+        "namePlaceholder": "ex. Construire une voiture",
+        "descriptionLabel": "Description",
+        "optional": "optionnel",
+        "descriptionPlaceholder": "En quoi consiste ce projet ?",
+        "dueDateLabel": "Échéance",
+        "cancel": "Annuler",
+        "create": "Créer"
+      },
+      "dueDateModal": {
+        "title": "Modifier l'échéance",
+        "dueDateHint": "laissez vide pour supprimer l'échéance",
+        "cancel": "Annuler",
+        "save": "Enregistrer"
+      },
+      "confirmDelete": "Supprimer ce projet ? Cette action est irréversible.",
+      "confirmPause": "Mettre ce projet en pause ? Les échéances de toutes les tâches seront effacées."
+    },
+    "detail": {
+      "backToProjects": "Retour aux projets",
+      "pausedBanner": {
+        "title": "Projet en pause",
+        "description": "Toutes les actions sur les tâches sont gelées. Les échéances des tâches ont été effacées.",
+        "unpause": "Relancer"
+      },
+      "inlineCreate": {
+        "namePlaceholder": "Nom de la nouvelle tâche…",
+        "dueDateTooltip": "Échéance (obligatoire)",
+        "addTooltip": "Ajouter la tâche (Entrée)"
+      },
+      "unassigned": "Non assignée",
+      "unknown": "Inconnu",
+      "youSuffix": "{{name}} (vous)",
+      "errors": {
+        "nameRequired": "Le nom de la tâche est requis.",
+        "dueDateRequired": "L'échéance est requise.",
+        "createFailed": "Échec de la création de la tâche. Le serveur JSON est-il lancé ?"
+      },
+      "filters": {
+        "all": "Toutes",
+        "active": "Actives",
+        "warning": "Alerte",
+        "expired": "Expirées",
+        "completed": "Terminées"
+      },
+      "checkboxTooltip": {
+        "expired": "Échéance expirée — impossible de terminer",
+        "markTodo": "Marquer à faire",
+        "markDone": "Marquer comme terminée",
+        "paused": "Projet en pause — actions gelées",
+        "expiredUndo": "Échéance expirée — annulation impossible"
+      },
+      "notYours": "Pas la vôtre",
+      "notYoursTooltip": "Assignée à quelqu'un d'autre",
+      "editTooltip": "Modifier l'échéance / l'assignation",
+      "deleteTaskTooltip": "Supprimer la tâche",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "newDueDateTooltip": "Nouvelle échéance",
+      "emptyMessages": {
+        "active": "Aucune tâche active avec une échéance normale.",
+        "warning": "Aucune tâche avec une échéance proche.",
+        "expired": "Aucune tâche expirée.",
+        "completed": "Aucune tâche terminée pour l'instant.",
+        "default": "Aucune tâche pour l'instant."
+      },
+      "emptyHintFirstTask": "Utilisez la ligne ci-dessus pour ajouter votre première tâche.",
+      "expiredHeader": "En retard ({{count}})",
+      "completedHeader": "Terminées ({{count}})",
+      "doneBadge": "terminée",
+      "confirmDeleteTask": "Supprimer cette tâche ?"
+    }
+  },
+  "myTasks": {
+    "title": "Mes tâches",
+    "subtitle": "Votre espace personnel — suivez tout ce qui vous est assigné.",
+    "stats": {
+      "warning": "{{count}} alerte",
+      "expired": "{{count}} expirée",
+      "done": "{{count}} terminée"
+    },
+    "filters": {
+      "all": "Toutes",
+      "active": "Actives",
+      "warning": "Alerte",
+      "expired": "Expirées",
+      "completed": "Terminées"
+    },
+    "emptyState": {
+      "title": "Aucune tâche ne vous est assignée pour l'instant.",
+      "description": "Les tâches qui vous sont assignées dans n'importe quel projet apparaîtront ici."
+    },
+    "checkboxTooltip": {
+      "paused": "Projet en pause — actions gelées",
+      "expired": "Échéance expirée — impossible de terminer",
+      "markTodo": "Marquer à faire",
+      "markDone": "Marquer comme terminée"
+    },
+    "projectPausedTooltip": "Projet en pause",
+    "deleteTooltip": "Supprimer",
+    "emptyMessages": {
+      "active": "Aucune tâche active avec une échéance normale.",
+      "warning": "Aucune tâche avec une échéance proche.",
+      "expired": "Aucune tâche expirée.",
+      "completed": "Aucune tâche terminée pour l'instant.",
+      "default": "Aucune tâche ne vous est assignée pour l'instant."
+    },
+    "expiredHeader": "En retard ({{count}})",
+    "completedHeader": "Tâches terminées ({{count}})",
+    "doneBadge": "terminée",
+    "personalProject": "Personnel",
+    "confirmDeleteTask": "Supprimer cette tâche ?"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Gérez votre compte, l'apparence et vos préférences.",
+    "nav": {
+      "profile": "Profil",
+      "appearance": "Apparence",
+      "notifications": "Notifications",
+      "security": "Sécurité",
+      "dangerZone": "Zone de danger"
+    },
+    "profile": {
+      "title": "Profil",
+      "subtitle": "C'est ainsi que les autres vous voient dans l'espace de travail.",
+      "unsavedChanges": "Modifications non enregistrées",
+      "fullName": "Nom complet",
+      "fullNamePlaceholder": "Votre nom",
+      "email": "Adresse e-mail",
+      "emailPlaceholder": "votre@email.com",
+      "birthday": "Date de naissance",
+      "optional": "optionnel",
+      "saveChanges": "Enregistrer les modifications",
+      "errors": {
+        "emptyFields": "Le nom et l'e-mail ne peuvent pas être vides.",
+        "emailTaken": "Cet e-mail est déjà utilisé par un autre compte.",
+        "emailCheckFailed": "Impossible de vérifier l'unicité de l'e-mail. Réessayez.",
+        "saveFailed": "Échec de l'enregistrement."
+      },
+      "saveSuccess": "Profil enregistré avec succès."
+    },
+    "appearance": {
+      "title": "Apparence",
+      "subtitle": "Personnalisez l'apparence de TaskFlow.",
+      "accentColor": "Couleur d'accent",
+      "accentColorDesc": "Utilisée pour les boutons, les états actifs et les mises en évidence.",
+      "language": "Langue",
+      "languageDesc": "Langue de l'interface."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Choisissez ce dont vous souhaitez être informé.",
+      "taskAssigned": { "label": "Tâche qui m'est assignée", "desc": "Quand quelqu'un vous assigne une tâche" },
+      "projectUpdates": { "label": "Mises à jour de projet", "desc": "Quand un projet auquel vous participez est mis à jour" },
+      "weeklySummary": { "label": "Résumé hebdomadaire", "desc": "Un aperçu hebdomadaire de votre productivité" },
+      "savePreferences": "Enregistrer les préférences",
+      "saveSuccess": "Préférences de notification enregistrées."
+    },
+    "security": {
+      "title": "Sécurité",
+      "subtitle": "Mettez à jour votre mot de passe pour sécuriser votre compte.",
+      "userId": "ID utilisateur",
+      "email": "E-mail",
+      "changePassword": "Changer le mot de passe",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "Au moins 6 caractères",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "confirmPasswordPlaceholder": "Répétez le nouveau mot de passe",
+      "updatePassword": "Mettre à jour le mot de passe",
+      "errors": {
+        "currentRequired": "Veuillez saisir votre mot de passe actuel.",
+        "tooShort": "Le nouveau mot de passe doit contenir au moins 6 caractères.",
+        "mismatch": "Les mots de passe ne correspondent pas.",
+        "wrongCurrent": "Le mot de passe actuel est incorrect.",
+        "updateFailed": "Échec de la mise à jour du mot de passe."
+      },
+      "updateSuccess": "Mot de passe modifié avec succès."
+    },
+    "danger": {
+      "title": "Zone de danger",
+      "subtitle": "Ces actions sont définitives et irréversibles.",
+      "signOut": { "title": "Déconnexion", "desc": "Termine votre session actuelle sur cet appareil.", "button": "Se déconnecter" },
+      "deleteAccount": { "title": "Supprimer le compte", "desc": "Supprime définitivement votre compte et toutes les données associées.", "button": "Supprimer le compte" },
+      "confirmTitle": "Êtes-vous absolument sûr ?",
+      "confirmDesc": "Cela supprimera définitivement votre compte. Cette action est irréversible.",
+      "confirmButton": "Oui, supprimer mon compte",
+      "cancel": "Annuler",
+      "deleteFailed": "Échec de la suppression du compte."
+    }
+  },
+  "team": {
+    "title": "Équipe",
+    "subtitle": "Les personnes avec qui vous êtes connecté sur Taskflow.",
+    "addFriend": "Ajouter un ami",
+    "requestsHeading": "Demandes d'ami",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "emptyState": {
+      "title": "Aucune connexion pour l'instant",
+      "description": "Recherchez quelqu'un par son nom exact ou son e-mail pour vous connecter"
+    },
+    "roleFriend": "Ami",
+    "removeTooltip": "Retirer de l'équipe",
+    "copied": "Copié !",
+    "copyEmail": "Copier l'e-mail",
+    "activeTasks": "{{count}} tâches actives",
+    "doneTasks": "{{count}} terminées",
+    "searchModal": {
+      "title": "Trouver un ami",
+      "description": "Saisissez le nom exact ou l'adresse e-mail de la personne pour la trouver.",
+      "placeholder": "Nom exact ou e-mail…",
+      "searching": "Recherche…",
+      "search": "Rechercher",
+      "noUserFound": "Aucun utilisateur trouvé avec ce nom exact ou cet e-mail.",
+      "friends": "Amis",
+      "requested": "Demande envoyée",
+      "add": "Ajouter",
+      "requestSent": "Demande d'ami envoyée à {{name}} !",
+      "close": "Fermer"
+    },
+    "confirmRemove": "Retirer cette personne de votre équipe ?"
+  },
+  "auth": {
+    "login": {
+      "heroLine1": "Bon retour sur",
+      "heroLine2": "TaskFlow",
+      "heroSubtitle": "Simplifiez vos projets, collaborez sans effort et accomplissez davantage avec notre puissante plateforme de gestion de projet.",
+      "features": {
+        "manage": "Gérez projets et tâches sans effort",
+        "collaborate": "Collaboration en temps réel avec votre équipe",
+        "track": "Suivez la progression avec des analyses détaillées",
+        "customize": "Flux de travail et automatisations personnalisables"
+      },
+      "formTitle": "Connectez-vous à votre compte",
+      "formSubtitle": "Bon retour ! Veuillez saisir vos informations.",
+      "email": "E-mail",
+      "emailPlaceholder": "Saisissez votre e-mail",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Saisissez votre mot de passe",
+      "submit": "Se connecter",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "signUpLink": "Inscrivez-vous gratuitement",
+      "errors": {
+        "wrongCredentials": "E-mail ou mot de passe incorrect.",
+        "generic": "Une erreur s'est produite. Réessayez."
+      }
+    },
+    "register": {
+      "heroLine1": "Gérez votre travail",
+      "heroLine2": "dès aujourd'hui.",
+      "heroSubtitle": "Rejoignez TaskFlow et organisez votre équipe. Créez des projets, assignez des tâches et collaborez — le tout au même endroit.",
+      "features": {
+        "free": "Gratuit, sans carte bancaire requise",
+        "setup": "Configurez votre espace de travail en quelques minutes",
+        "invite": "Invitez votre équipe et commencez à collaborer"
+      },
+      "formTitle": "Créez votre compte",
+      "formSubtitle": "Commencez avec TaskFlow gratuitement.",
+      "fullName": "Nom complet",
+      "fullNamePlaceholder": "Votre nom",
+      "email": "E-mail",
+      "emailPlaceholder": "Saisissez votre e-mail",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Au moins 6 caractères",
+      "submit": "Créer le compte",
+      "checking": "Vérification…",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "signInLink": "Connectez-vous",
+      "errors": {
+        "missingFields": "Veuillez remplir tous les champs.",
+        "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
+        "emailTaken": "Cet e-mail est déjà utilisé.",
+        "generic": "Échec de l'inscription. Réessayez."
+      }
+    }
+  }
+}

@@ -2,14 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
+import { LanguageService, AppLanguage } from '../../core/i18n/language.service';
 import { User } from '../../domain/models/user.model';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })
@@ -32,6 +34,8 @@ export class SettingsComponent implements OnInit {
   ];
   selectedAccent = '#6c63ff';
 
+  currentLang: AppLanguage = 'en';
+
   notifications = {
     taskAssigned: true,
     projectUpdates: true,
@@ -48,7 +52,9 @@ export class SettingsComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private http: HttpClient
+    private http: HttpClient,
+    private languageService: LanguageService,
+    private translate: TranslateService
   ) {}
 
  ngOnInit() {
@@ -65,6 +71,8 @@ export class SettingsComponent implements OnInit {
   }
   const notifs = localStorage.getItem('notifications');
   if (notifs) this.notifications = JSON.parse(notifs);
+
+  this.currentLang = this.languageService.getLanguage();
 }
 
   get initials(): string {
@@ -83,7 +91,7 @@ export class SettingsComponent implements OnInit {
   saveProfile() {
     if (!this.currentUser) return;
     if (!this.editName.trim() || !this.editEmail.trim()) {
-      this.errorMessage = 'Name and email cannot be empty.';
+      this.errorMessage = this.translate.instant('settings.profile.errors.emptyFields');
       return;
     }
 
@@ -94,12 +102,12 @@ export class SettingsComponent implements OnInit {
       this.authService.isEmailTaken(newEmail, this.currentUser.id).subscribe({
         next: (taken) => {
           if (taken) {
-            this.errorMessage = 'That email is already used by another account.';
+            this.errorMessage = this.translate.instant('settings.profile.errors.emailTaken');
             return;
           }
           this.executeSaveProfile();
         },
-        error: () => { this.errorMessage = 'Could not verify email uniqueness. Try again.'; }
+        error: () => { this.errorMessage = this.translate.instant('settings.profile.errors.emailCheckFailed'); }
       });
     } else {
       this.executeSaveProfile();
@@ -121,11 +129,11 @@ export class SettingsComponent implements OnInit {
         localStorage.setItem('user', JSON.stringify(user));
         this.currentUser = user;
         this.hasUnsavedChanges = false;
-        this.successMessage = 'Profile saved successfully.';
+        this.successMessage = this.translate.instant('settings.profile.saveSuccess');
         this.errorMessage = '';
         setTimeout(() => this.successMessage = '', 3000);
       },
-      error: () => { this.errorMessage = 'Failed to save.'; }
+      error: () => { this.errorMessage = this.translate.instant('settings.profile.errors.saveFailed'); }
     });
   }
 
@@ -135,9 +143,14 @@ export class SettingsComponent implements OnInit {
     document.documentElement.style.setProperty('--accent', color);
   }
 
+  selectLanguage(lang: AppLanguage) {
+    this.currentLang = lang;
+    this.languageService.setLanguage(lang);
+  }
+
   saveNotifications() {
     localStorage.setItem('notifications', JSON.stringify(this.notifications));
-    this.successMessage = 'Notification preferences saved.';
+    this.successMessage = this.translate.instant('settings.notifications.saveSuccess');
     setTimeout(() => this.successMessage = '', 3000);
   }
 
@@ -145,13 +158,13 @@ export class SettingsComponent implements OnInit {
     this.passwordError = '';
     this.passwordSuccess = '';
     if (!this.currentPassword) {
-      this.passwordError = 'Please enter your current password.'; return;
+      this.passwordError = this.translate.instant('settings.security.errors.currentRequired'); return;
     }
     if (this.newPassword.length < 6) {
-      this.passwordError = 'New password must be at least 6 characters.'; return;
+      this.passwordError = this.translate.instant('settings.security.errors.tooShort'); return;
     }
     if (this.newPassword !== this.confirmPassword) {
-      this.passwordError = 'Passwords do not match.'; return;
+      this.passwordError = this.translate.instant('settings.security.errors.mismatch'); return;
     }
     if (!this.currentUser) return;
 
@@ -170,14 +183,14 @@ export class SettingsComponent implements OnInit {
         this.currentPassword = '';
         this.newPassword = '';
         this.confirmPassword = '';
-        this.passwordSuccess = 'Password changed successfully.';
+        this.passwordSuccess = this.translate.instant('settings.security.updateSuccess');
         setTimeout(() => this.passwordSuccess = '', 3000);
       },
       error: (err: HttpErrorResponse) => {
         if (err.status === 401) {
-          this.passwordError = 'Current password is incorrect.';
+          this.passwordError = this.translate.instant('settings.security.errors.wrongCurrent');
         } else {
-          this.passwordError = 'Failed to update password.';
+          this.passwordError = this.translate.instant('settings.security.errors.updateFailed');
         }
       }
     });
@@ -195,7 +208,7 @@ export class SettingsComponent implements OnInit {
           this.authService.logout();
           window.location.href = '/register';
         },
-        error: () => alert('Failed to delete account.')
+        error: () => alert(this.translate.instant('settings.danger.deleteFailed'))
       });
   }
 }

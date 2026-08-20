@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TaskRepository } from '../../domain/repositories/task.repository';
 import { ProjectRepository } from '../../domain/repositories/project.repository';
 import { AuthService } from '../../core/auth/auth.service';
+import { LanguageService } from '../../core/i18n/language.service';
 import { DeadlineService, TaskDeadlineState } from '../../core/deadline/deadline.service';
 import { UrgencyService, UrgencyLevel } from '../../core/urgency/urgency.service';
 import { Task } from '../../domain/models/task.model';
@@ -14,7 +16,7 @@ import { Project } from '../../domain/models/project.model';
 @Component({
   selector: 'app-my-tasks',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './my-tasks.component.html',
   styleUrl: './my-tasks.component.scss',
 })
@@ -33,6 +35,8 @@ export class MyTasksComponent implements OnInit {
     private deadlineService: DeadlineService,
     private urgencyService: UrgencyService,
     private router: Router,
+    private translate: TranslateService,
+    private languageService: LanguageService,
   ) {}
 
   ngOnInit() {
@@ -95,11 +99,11 @@ export class MyTasksComponent implements OnInit {
 
   get emptyFilterMessage(): string {
     switch (this.activeFilter) {
-      case 'active':    return 'No active tasks with normal deadlines.';
-      case 'warning':   return 'No tasks with upcoming deadlines.';
-      case 'expired':   return 'No expired tasks.';
-      case 'completed': return 'No completed tasks yet.';
-      default:          return 'No tasks assigned to you yet.';
+      case 'active':    return this.translate.instant('myTasks.emptyMessages.active');
+      case 'warning':   return this.translate.instant('myTasks.emptyMessages.warning');
+      case 'expired':   return this.translate.instant('myTasks.emptyMessages.expired');
+      case 'completed': return this.translate.instant('myTasks.emptyMessages.completed');
+      default:          return this.translate.instant('myTasks.emptyMessages.default');
     }
   }
 
@@ -134,17 +138,17 @@ export class MyTasksComponent implements OnInit {
 
   getDeadlineLabel(task: Task): string {
     const state = this.getTaskState(task);
-    if (state === 'none') return 'No deadline';
-    if (state === 'expired') return 'Expired';
+    if (state === 'none') return this.translate.instant('deadline.noDeadline');
+    if (state === 'expired') return this.translate.instant('deadline.expired');
     const days = this.deadlineService.getDaysUntil(task.dueDate)!;
-    if (state === 'warning') return days === 0 ? 'Due today' : `${days}d left`;
+    if (state === 'warning') return days === 0 ? this.translate.instant('deadline.dueToday') : this.translate.instant('deadline.daysLeftShort', { count: days });
     return this.formatDueDate(task.dueDate);
   }
 
   formatDueDate(dueDate: string | null): string {
     if (!dueDate) return '';
     const [year, month, day] = dueDate.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('en-GB', {
+    return new Date(year, month - 1, day).toLocaleDateString(this.languageService.getIntlLocale(), {
       day: 'numeric', month: 'short',
     });
   }
@@ -171,9 +175,9 @@ export class MyTasksComponent implements OnInit {
 
   /** Tooltip text for the completion checkbox. */
   getCheckboxTitle(task: Task): string {
-    if (this.isProjectPaused(task.projectId)) return 'Project is paused — actions frozen';
-    if (this.getTaskState(task) === 'expired') return 'Deadline expired — cannot complete';
-    return task.status === 'done' ? 'Mark as to-do' : 'Mark as done';
+    if (this.isProjectPaused(task.projectId)) return this.translate.instant('myTasks.checkboxTooltip.paused');
+    if (this.getTaskState(task) === 'expired') return this.translate.instant('myTasks.checkboxTooltip.expired');
+    return task.status === 'done' ? this.translate.instant('myTasks.checkboxTooltip.markTodo') : this.translate.instant('myTasks.checkboxTooltip.markDone');
   }
 
   // ── Task actions ──────────────────────────────────────────────────────────
@@ -190,7 +194,7 @@ export class MyTasksComponent implements OnInit {
   deleteTask(taskId: string) {
     const task = this.myTasks.find((t) => t.id === taskId);
     if (task && !this.canDeleteTask(task)) return;
-    if (!confirm('Delete this task?')) return;
+    if (!confirm(this.translate.instant('myTasks.confirmDeleteTask'))) return;
     this.taskRepo.delete(taskId).subscribe(() => {
       this.myTasks = this.myTasks.filter((t) => t.id !== taskId);
     });
@@ -199,8 +203,8 @@ export class MyTasksComponent implements OnInit {
   // ── Navigation ────────────────────────────────────────────────────────────
 
   getProjectName(projectId: string | null): string {
-    if (!projectId) return 'Personal';
-    return this.projectsMap[projectId]?.name ?? 'Personal';
+    if (!projectId) return this.translate.instant('myTasks.personalProject');
+    return this.projectsMap[projectId]?.name ?? this.translate.instant('myTasks.personalProject');
   }
 
   goToProject(projectId: string | null) {

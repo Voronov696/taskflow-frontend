@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
@@ -19,15 +20,15 @@ export class RegisterComponent {
   errorMessage = '';
   isChecking = false;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router, private translate: TranslateService) {}
 
   onRegister() {
     if (!this.name || !this.email || !this.password) {
-      this.errorMessage = 'Please fill in all fields.';
+      this.errorMessage = this.translate.instant('auth.register.errors.missingFields');
       return;
     }
     if (this.password.length < 6) {
-      this.errorMessage = 'Password must be at least 6 characters.';
+      this.errorMessage = this.translate.instant('auth.register.errors.passwordTooShort');
       return;
     }
 
@@ -47,9 +48,9 @@ export class RegisterComponent {
       error: (err: HttpErrorResponse) => {
         this.isChecking = false;
         if (err.status === 409) {
-          this.errorMessage = 'Этот email уже занят';
+          this.errorMessage = this.translate.instant('auth.register.errors.emailTaken');
         } else {
-          this.errorMessage = 'Registration failed. Try again.';
+          this.errorMessage = this.translate.instant('auth.register.errors.generic');
         }
       }
     });

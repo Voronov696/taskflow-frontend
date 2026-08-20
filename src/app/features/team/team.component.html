@@ -1,17 +1,17 @@
 <div class="team-page">
   <div class="page-header">
     <div>
-      <h1>Team</h1>
-      <p class="subtitle">People you've connected with on Taskflow.</p>
+      <h1>{{ 'team.title' | translate }}</h1>
+      <p class="subtitle">{{ 'team.subtitle' | translate }}</p>
     </div>
     <button class="btn-accent" (click)="openSearchModal()">
-      <i class="ti ti-user-plus"></i> Add Friend
+      <i class="ti ti-user-plus"></i> {{ 'team.addFriend' | translate }}
     </button>
   </div>
 
   <!-- INCOMING FRIEND REQUESTS -->
   <div class="requests-section" *ngIf="incomingRequests.length > 0">
-    <h2 class="section-heading">Friend requests</h2>
+    <h2 class="section-heading">{{ 'team.requestsHeading' | translate }}</h2>
     <div class="requests-list">
       <div class="result-card" *ngFor="let request of incomingRequests">
         <div class="result-avatar">{{ getInitials(request.user.name) }}</div>
@@ -21,10 +21,10 @@
         </div>
         <div class="result-action request-actions">
           <button class="btn-accent" (click)="acceptRequest(request.requestId, $event)">
-            <i class="ti ti-check"></i> Accept
+            <i class="ti ti-check"></i> {{ 'team.accept' | translate }}
           </button>
           <button class="btn-ghost" (click)="declineRequest(request.requestId, $event)">
-            <i class="ti ti-x"></i> Decline
+            <i class="ti ti-x"></i> {{ 'team.decline' | translate }}
           </button>
         </div>
       </div>
@@ -34,8 +34,8 @@
   <!-- EMPTY STATE -->
   <div class="empty-dropzone" *ngIf="friends.length === 0" (click)="openSearchModal()">
     <i class="ti ti-users"></i>
-    <p>No connections yet</p>
-    <span>Search for someone by their exact name or email to connect</span>
+    <p>{{ 'team.emptyState.title' | translate }}</p>
+    <span>{{ 'team.emptyState.description' | translate }}</span>
   </div>
 
   <!-- FRIENDS GRID -->
@@ -45,10 +45,10 @@
         <div class="avatar">{{ getInitials(entry.user.name) }}</div>
         <div class="member-info">
           <span class="member-name">{{ entry.user.name }}</span>
-          <span class="role-badge member">Friend</span>
+          <span class="role-badge member">{{ 'team.roleFriend' | translate }}</span>
         </div>
         <button class="remove-btn" (click)="removeFriend(entry.user.id, $event)"
-                title="Remove from team">
+                [title]="'team.removeTooltip' | translate">
           <i class="ti ti-user-minus"></i>
         </button>
       </div>
@@ -58,11 +58,11 @@
         <span>{{ entry.user.email }}</span>
         <button class="copy-btn"
                 (click)="copyEmail(entry.user.email, $event)"
-                [title]="copiedEmail === entry.user.email ? 'Copied!' : 'Copy email'">
+                [title]="(copiedEmail === entry.user.email ? 'team.copied' : 'team.copyEmail') | translate">
           <i class="ti"
              [class.ti-copy]="copiedEmail !== entry.user.email"
              [class.ti-check]="copiedEmail === entry.user.email"></i>
-          <span class="copied-label" *ngIf="copiedEmail === entry.user.email">Copied!</span>
+          <span class="copied-label" *ngIf="copiedEmail === entry.user.email">{{ 'team.copied' | translate }}</span>
         </button>
       </div>
 
@@ -71,11 +71,11 @@
       <div class="card-stats">
         <div class="stat">
           <i class="ti ti-checklist"></i>
-          <span>{{ entry.activeTasks }} active tasks</span>
+          <span>{{ 'team.activeTasks' | translate:{ count: entry.activeTasks } }}</span>
         </div>
         <div class="stat done" *ngIf="entry.completedTasks > 0">
           <i class="ti ti-circle-check"></i>
-          <span>{{ entry.completedTasks }} done</span>
+          <span>{{ 'team.doneTasks' | translate:{ count: entry.completedTasks } }}</span>
         </div>
       </div>
     </div>
@@ -86,31 +86,31 @@
 <div class="modal-overlay" *ngIf="showSearchModal" (click)="closeSearchModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2><i class="ti ti-user-search" style="color:var(--accent)"></i> Find a Friend</h2>
+      <h2><i class="ti ti-user-search" style="color:var(--accent)"></i> {{ 'team.searchModal.title' | translate }}</h2>
       <button class="close-btn" (click)="closeSearchModal()">
         <i class="ti ti-x"></i>
       </button>
     </div>
 
     <p class="modal-subtitle">
-      Enter someone's exact name or email address to find them.
+      {{ 'team.searchModal.description' | translate }}
     </p>
 
     <div class="search-row">
-      <input class="input" type="text" placeholder="Exact name or email…"
+      <input class="input" type="text" [placeholder]="'team.searchModal.placeholder' | translate"
              [(ngModel)]="searchQuery"
              (keydown)="onSearchKeydown($event)"
              [disabled]="isSearching" />
       <button class="btn-accent" (click)="performSearch()" [disabled]="isSearching || !searchQuery.trim()">
         <i class="ti" [class.ti-search]="!isSearching" [class.ti-loader-2]="isSearching"></i>
-        {{ isSearching ? 'Searching…' : 'Search' }}
+        {{ (isSearching ? 'team.searchModal.searching' : 'team.searchModal.search') | translate }}
       </button>
     </div>
 
     <!-- NOT FOUND -->
     <div class="search-empty" *ngIf="searchDone && searchResults.length === 0">
       <i class="ti ti-user-x"></i>
-      <span>No user found with that exact name or email.</span>
+      <span>{{ 'team.searchModal.noUserFound' | translate }}</span>
     </div>
 
     <!-- RESULT CARDS -->
@@ -122,13 +122,13 @@
       </div>
       <div class="result-action">
         <span class="already-badge" *ngIf="result.status === 'accepted'">
-          <i class="ti ti-check"></i> Friends
+          <i class="ti ti-check"></i> {{ 'team.searchModal.friends' | translate }}
         </span>
         <span class="already-badge pending" *ngIf="result.status === 'pending'">
-          <i class="ti ti-clock"></i> Requested
+          <i class="ti ti-clock"></i> {{ 'team.searchModal.requested' | translate }}
         </span>
         <button class="btn-accent" *ngIf="result.status === 'none'" (click)="addFriend(result.user)">
-          <i class="ti ti-user-plus"></i> Add
+          <i class="ti ti-user-plus"></i> {{ 'team.searchModal.add' | translate }}
         </button>
       </div>
     </div>
@@ -136,11 +136,11 @@
     <!-- SUCCESS MESSAGE -->
     <div class="success-msg" *ngIf="addSuccess">
       <i class="ti ti-circle-check"></i>
-      <span>Friend request sent to {{ addedName }}!</span>
+      <span>{{ 'team.searchModal.requestSent' | translate:{ name: addedName } }}</span>
     </div>
 
     <div class="modal-actions">
-      <button class="btn-ghost" (click)="closeSearchModal()">Close</button>
+      <button class="btn-ghost" (click)="closeSearchModal()">{{ 'team.searchModal.close' | translate }}</button>
     </div>
   </div>
 </div>

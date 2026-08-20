@@ -1,31 +1,31 @@
 <div class="projects-page" (click)="closeMenu()">
   <div class="page-header">
     <div>
-      <h1>Projects</h1>
-      <p class="subtitle">{{ projectCards.length }} project{{ projectCards.length !== 1 ? 's' : '' }}</p>
+      <h1>{{ 'projects.list.title' | translate }}</h1>
+      <p class="subtitle">{{ (projectCards.length === 1 ? 'projects.list.projectCount' : 'projects.list.projectCountPlural') | translate:{ count: projectCards.length } }}</p>
     </div>
     <button class="btn-accent" (click)="openModal()">
-      <i class="ti ti-plus"></i> New Project
+      <i class="ti ti-plus"></i> {{ 'projects.list.newProject' | translate }}
     </button>
   </div>
 
   <div class="toolbar">
     <div class="search-box">
       <i class="ti ti-search"></i>
-      <input type="text" placeholder="Search projects…" [(ngModel)]="searchQuery" />
+      <input type="text" [placeholder]="'projects.list.searchPlaceholder' | translate" [(ngModel)]="searchQuery" />
     </div>
     <div class="filter-tabs">
       <button class="filter-tab" [class.active]="activeFilter === 'all'"    (click)="setFilter('all')">
-        All <span class="count">{{ projectCards.length }}</span>
+        {{ 'projects.list.filters.all' | translate }} <span class="count">{{ projectCards.length }}</span>
       </button>
       <button class="filter-tab" [class.active]="activeFilter === 'active'" (click)="setFilter('active')">
-        Active
+        {{ 'projects.list.filters.active' | translate }}
       </button>
       <button class="filter-tab paused-tab" [class.active]="activeFilter === 'archived'" (click)="setFilter('archived')">
-        <i class="ti ti-archive"></i> Archive
+        <i class="ti ti-archive"></i> {{ 'projects.list.filters.archive' | translate }}
       </button>
       <button class="filter-tab" [class.active]="activeFilter === 'done'"   (click)="setFilter('done')">
-        <i class="ti ti-circle-check"></i> Completed
+        <i class="ti ti-circle-check"></i> {{ 'projects.list.filters.completed' | translate }}
       </button>
     </div>
   </div>
@@ -33,7 +33,7 @@
   <!-- SEARCH EMPTY STATE -->
   <div class="empty-state" *ngIf="noResultsForSearch">
     <i class="ti ti-search"></i>
-    <p>No projects match "{{ searchQuery }}"</p>
+    <p>{{ 'projects.list.noSearchResults' | translate:{ query: searchQuery } }}</p>
   </div>
 
   <!-- ACTIVE PROJECTS GRID -->
@@ -44,32 +44,36 @@
          (click)="openProject(card.project.id)">
       <div class="card-header">
         <span class="card-name">{{ card.project.name }}</span>
-        <span class="status-tag active">Active</span>
-        <span class="shared-tag" *ngIf="isShared(card.project)" title="You're a member, not the owner">
+        <span class="status-tag active">{{ 'projects.list.card.statusActive' | translate }}</span>
+        <span class="shared-tag" *ngIf="isShared(card.project)" [title]="'projects.list.card.sharedTooltip' | translate">
           <i class="ti ti-users"></i>
         </span>
         <div class="menu-wrapper">
-          <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+          <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" [title]="'projects.list.card.moreActions' | translate">
             <i class="ti ti-dots"></i>
           </button>
           <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
+            <div class="dropdown-item" *ngIf="isOwner(card.project)" (click)="openDueDateModal(card.project, $event)">
+              <i class="ti ti-calendar"></i> {{ 'projects.list.card.changeDueDate' | translate }}
+            </div>
+            <div class="dropdown-divider" *ngIf="isOwner(card.project)"></div>
             <div class="dropdown-item pause" *ngIf="isOwner(card.project)" (click)="pauseProject(card.project.id, $event)">
-              <i class="ti ti-pause"></i> Pause project
+              <i class="ti ti-pause"></i> {{ 'projects.list.card.pauseProject' | translate }}
             </div>
             <div class="dropdown-divider" *ngIf="isOwner(card.project)"></div>
             <div class="dropdown-item delete" *ngIf="isOwner(card.project)" (click)="deleteProject(card.project.id, $event)">
-              <i class="ti ti-trash"></i> Delete project
+              <i class="ti ti-trash"></i> {{ 'projects.list.card.deleteProject' | translate }}
             </div>
           </div>
         </div>
       </div>
-      <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
+      <p class="card-desc">{{ card.project.description || ('projects.list.card.noDescription' | translate) }}</p>
       <div class="card-due"
            *ngIf="card.project.dueDate"
            [class.state-soon]="getUrgency(card.project) === 'soon'"
            [class.state-urgent]="getUrgency(card.project) === 'urgent'">
         <i class="ti ti-calendar"></i>
-        Due {{ card.project.dueDate | date:'dd MMM yyyy' }}
+        {{ 'projects.list.card.due' | translate }} {{ card.project.dueDate | date:'dd MMM yyyy':undefined:dateLocale }}
         <span class="urgency-label" *ngIf="getUrgencyLabel(card.project)">— {{ getUrgencyLabel(card.project) }}</span>
       </div>
       <div class="card-progress">
@@ -81,7 +85,7 @@
       <div class="card-footer">
         <div class="task-info">
           <i class="ti ti-checklist"></i>
-          {{ card.totalTasks }} tasks · {{ card.doneTasks }} done
+          {{ 'projects.list.card.taskInfo' | translate:{ total: card.totalTasks, done: card.doneTasks } }}
         </div>
         <div class="avatars">
           <div class="avatar" *ngFor="let initials of card.memberInitials">{{ initials }}</div>
@@ -92,14 +96,14 @@
 
     <div class="new-card" (click)="openModal()">
       <i class="ti ti-plus"></i>
-      <span>New project</span>
+      <span>{{ 'projects.list.newProjectTile' | translate }}</span>
     </div>
   </div>
 
   <!-- EMPTY ACTIVE STATE -->
   <div class="empty-state" *ngIf="activeCards.length === 0 && activeFilter === 'active' && !searchQuery">
     <i class="ti ti-folder"></i>
-    <p>No active projects.</p>
+    <p>{{ 'projects.list.noActiveProjects' | translate }}</p>
   </div>
 
   <!-- ARCHIVE ACCORDION (Part 3 of the spec): paused + overdue, greyed out -->
@@ -109,7 +113,7 @@
       <div class="accordion-left">
         <i class="ti" [class.ti-chevron-right]="!showArchivedProjects"
            [class.ti-chevron-down]="showArchivedProjects"></i>
-        <span>Archive ({{ archivedCards.length }})</span>
+        <span>{{ 'projects.list.archive.header' | translate:{ count: archivedCards.length } }}</span>
       </div>
       <div class="accordion-line"></div>
     </div>
@@ -120,29 +124,33 @@
            (click)="openProject(card.project.id)">
         <div class="card-header">
           <span class="card-name">{{ card.project.name }}</span>
-          <span class="status-tag paused" *ngIf="card.project.status === 'paused'"><i class="ti ti-pause"></i> Paused</span>
-          <span class="status-tag overdue" *ngIf="card.project.status !== 'paused'"><i class="ti ti-clock-x"></i> Overdue</span>
+          <span class="status-tag paused" *ngIf="card.project.status === 'paused'"><i class="ti ti-pause"></i> {{ 'projects.list.archive.statusPaused' | translate }}</span>
+          <span class="status-tag overdue" *ngIf="card.project.status !== 'paused'"><i class="ti ti-clock-x"></i> {{ 'projects.list.archive.statusOverdue' | translate }}</span>
           <div class="menu-wrapper">
-            <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+            <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" [title]="'projects.list.card.moreActions' | translate">
               <i class="ti ti-dots"></i>
             </button>
             <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
+              <div class="dropdown-item" *ngIf="isOwner(card.project)" (click)="openDueDateModal(card.project, $event)">
+                <i class="ti ti-calendar"></i> {{ 'projects.list.card.changeDueDate' | translate }}
+              </div>
+              <div class="dropdown-divider" *ngIf="isOwner(card.project)"></div>
               <div class="dropdown-item" *ngIf="card.project.status === 'paused' && isOwner(card.project)" (click)="unpauseProject(card.project.id, $event)">
-                <i class="ti ti-player-play"></i> Unpause project
+                <i class="ti ti-player-play"></i> {{ 'projects.list.archive.unpauseProject' | translate }}
               </div>
               <div class="dropdown-divider" *ngIf="card.project.status === 'paused' && isOwner(card.project)"></div>
               <div class="dropdown-item delete" *ngIf="isOwner(card.project)" (click)="deleteProject(card.project.id, $event)">
-                <i class="ti ti-trash"></i> Delete project
+                <i class="ti ti-trash"></i> {{ 'projects.list.card.deleteProject' | translate }}
               </div>
             </div>
           </div>
         </div>
-        <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
+        <p class="card-desc">{{ card.project.description || ('projects.list.card.noDescription' | translate) }}</p>
         <div class="paused-notice" *ngIf="card.project.status === 'paused'">
-          <i class="ti ti-lock"></i> Task actions frozen — unpause to continue
+          <i class="ti ti-lock"></i> {{ 'projects.list.archive.frozenNotice' | translate }}
         </div>
         <div class="card-due" *ngIf="card.project.status !== 'paused' && card.project.dueDate">
-          <i class="ti ti-calendar-off"></i> Was due {{ card.project.dueDate | date:'dd MMM yyyy' }}
+          <i class="ti ti-calendar-off"></i> {{ 'projects.list.archive.wasDue' | translate }} {{ card.project.dueDate | date:'dd MMM yyyy':undefined:dateLocale }}
         </div>
         <div class="card-progress">
           <div class="progress-bar">
@@ -153,7 +161,7 @@
         <div class="card-footer">
           <div class="task-info">
             <i class="ti ti-checklist"></i>
-            {{ card.totalTasks }} tasks · {{ card.doneTasks }} done
+            {{ 'projects.list.card.taskInfo' | translate:{ total: card.totalTasks, done: card.doneTasks } }}
           </div>
         </div>
       </div>
@@ -167,7 +175,7 @@
       <div class="accordion-left">
         <i class="ti" [class.ti-chevron-right]="!showCompletedProjects"
            [class.ti-chevron-down]="showCompletedProjects"></i>
-        <span>Completed Projects ({{ completedCards.length }})</span>
+        <span>{{ 'projects.list.completed.header' | translate:{ count: completedCards.length } }}</span>
       </div>
       <div class="accordion-line"></div>
     </div>
@@ -178,21 +186,25 @@
            (click)="openProject(card.project.id)">
         <div class="card-header">
           <span class="card-name">{{ card.project.name }}</span>
-          <span class="status-tag done">Completed</span>
+          <span class="status-tag done">{{ 'projects.list.completed.statusCompleted' | translate }}</span>
           <div class="menu-wrapper">
-            <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" title="More actions">
+            <button class="menu-btn" *ngIf="isOwner(card.project)" (click)="toggleMenu(card.project.id, $event)" [title]="'projects.list.card.moreActions' | translate">
               <i class="ti ti-dots"></i>
             </button>
             <div class="dropdown-menu" *ngIf="openMenuId === card.project.id" (click)="$event.stopPropagation()">
+              <div class="dropdown-item" *ngIf="isOwner(card.project)" (click)="openDueDateModal(card.project, $event)">
+                <i class="ti ti-calendar"></i> {{ 'projects.list.card.changeDueDate' | translate }}
+              </div>
+              <div class="dropdown-divider" *ngIf="isOwner(card.project)"></div>
               <div class="dropdown-item delete" *ngIf="isOwner(card.project)" (click)="deleteProject(card.project.id, $event)">
-                <i class="ti ti-trash"></i> Delete project
+                <i class="ti ti-trash"></i> {{ 'projects.list.card.deleteProject' | translate }}
               </div>
             </div>
           </div>
         </div>
-        <p class="card-desc">{{ card.project.description || 'No description provided.' }}</p>
+        <p class="card-desc">{{ card.project.description || ('projects.list.card.noDescription' | translate) }}</p>
         <div class="card-due" *ngIf="card.project.dueDate">
-          <i class="ti ti-calendar"></i> Due {{ card.project.dueDate | date:'dd MMM yyyy' }}
+          <i class="ti ti-calendar"></i> {{ 'projects.list.card.due' | translate }} {{ card.project.dueDate | date:'dd MMM yyyy':undefined:dateLocale }}
         </div>
         <div class="card-progress">
           <div class="progress-bar">
@@ -203,7 +215,7 @@
         <div class="card-footer">
           <div class="task-info">
             <i class="ti ti-checklist"></i>
-            {{ card.totalTasks }} tasks · {{ card.doneTasks }} done
+            {{ 'projects.list.card.taskInfo' | translate:{ total: card.totalTasks, done: card.doneTasks } }}
           </div>
         </div>
       </div>
@@ -214,25 +226,43 @@
 <!-- NEW PROJECT MODAL -->
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
   <div class="modal" (click)="$event.stopPropagation()">
-    <h2>New Project</h2>
+    <h2>{{ 'projects.list.modal.title' | translate }}</h2>
     <div class="modal-field">
-      <label>Project name</label>
-      <input class="input" type="text" placeholder="e.g. Build a Car" [(ngModel)]="newProjectName" />
+      <label>{{ 'projects.list.modal.nameLabel' | translate }}</label>
+      <input class="input" type="text" [placeholder]="'projects.list.modal.namePlaceholder' | translate" [(ngModel)]="newProjectName" />
     </div>
     <div class="modal-field">
-      <label>Description <span class="optional">— optional</span></label>
-      <input class="input" type="text" placeholder="What is this project about?" [(ngModel)]="newProjectDescription" />
+      <label>{{ 'projects.list.modal.descriptionLabel' | translate }} <span class="optional">— {{ 'projects.list.modal.optional' | translate }}</span></label>
+      <input class="input" type="text" [placeholder]="'projects.list.modal.descriptionPlaceholder' | translate" [(ngModel)]="newProjectDescription" />
     </div>
     <div class="modal-field">
-      <label>Due date <span class="optional">— optional</span></label>
+      <label>{{ 'projects.list.modal.dueDateLabel' | translate }} <span class="optional">— {{ 'projects.list.modal.optional' | translate }}</span></label>
       <div class="date-wrap">
         <i class="ti ti-calendar cal-icon"></i>
         <input class="input" type="date" [(ngModel)]="newProjectDueDate" />
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn-ghost" (click)="closeModal()">Cancel</button>
-      <button class="btn-accent" (click)="createProject()">Create</button>
+      <button class="btn-ghost" (click)="closeModal()">{{ 'projects.list.modal.cancel' | translate }}</button>
+      <button class="btn-accent" (click)="createProject()">{{ 'projects.list.modal.create' | translate }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE DUE DATE MODAL -->
+<div class="modal-overlay" *ngIf="showDueDateModal" (click)="closeDueDateModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h2>{{ 'projects.list.dueDateModal.title' | translate }}</h2>
+    <div class="modal-field">
+      <label>{{ 'projects.list.modal.dueDateLabel' | translate }} <span class="optional">— {{ 'projects.list.dueDateModal.dueDateHint' | translate }}</span></label>
+      <div class="date-wrap">
+        <i class="ti ti-calendar cal-icon"></i>
+        <input class="input" type="date" [(ngModel)]="dueDateValue" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" (click)="closeDueDateModal()">{{ 'projects.list.dueDateModal.cancel' | translate }}</button>
+      <button class="btn-accent" (click)="saveDueDate()">{{ 'projects.list.dueDateModal.save' | translate }}</button>
     </div>
   </div>
 </div>

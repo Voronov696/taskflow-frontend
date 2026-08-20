@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 /**
  * Уровень визуальной срочности по дате окончания — общий для задач И
@@ -17,6 +18,8 @@ export const URGENCY_URGENT_DAYS = 3;
 
 @Injectable({ providedIn: 'root' })
 export class UrgencyService {
+
+  constructor(private translate: TranslateService) {}
 
   /** Parse an ISO date string (YYYY-MM-DD) as local midnight to avoid UTC offset issues. */
   private toLocalMidnight(dateStr: string): Date {
@@ -51,20 +54,10 @@ export class UrgencyService {
   getLabel(dueDate: string | null | undefined): string {
     const level = this.getLevel(dueDate);
     if (level === null || level === 'normal') return '';
-    if (level === 'overdue') return 'Просрочено';
+    if (level === 'overdue') return this.translate.instant('urgency.overdue');
 
     const days = this.getDaysRemaining(dueDate)!;
-    if (days === 0) return 'Сегодня';
-    if (level === 'urgent') return `Осталось ${days} дн.`;
-    return `Осталось ${days} ${this.daysWord(days)}`;
-  }
-
-  private daysWord(n: number): string {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod100 >= 11 && mod100 <= 14) return 'дней';
-    if (mod10 === 1) return 'день';
-    if (mod10 >= 2 && mod10 <= 4) return 'дня';
-    return 'дней';
+    if (days === 0) return this.translate.instant('urgency.today');
+    return this.translate.instant(days === 1 ? 'urgency.daysLeft' : 'urgency.daysLeftPlural', { count: days });
   }
 }

@@ -79,7 +79,11 @@
 
   /* Групповой проект — я не владелец, только участник (Часть 2B ТЗ) */
   &.is-shared {
+    border-width: 2px;
     border-style: dashed;
+    border-color: #3a3d52;
+
+    &:hover { border-color: #52567a; }
   }
 }
 

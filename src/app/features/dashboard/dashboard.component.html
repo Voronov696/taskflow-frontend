@@ -1,15 +1,15 @@
 <div class="dashboard">
   <div class="topbar">
     <div>
-      <h1>Good morning, {{ currentUser?.name }} 👋</h1>
-      <p class="date-line">{{ todayDate }} — {{ pendingTasksCount }} tasks pending</p>
+      <h1>{{ 'dashboard.topbar.greeting' | translate:{ name: currentUser?.name } }}</h1>
+      <p class="date-line">{{ todayDate }} — {{ 'dashboard.topbar.tasksPending' | translate:{ count: pendingTasksCount } }}</p>
     </div>
     <div class="topbar-actions">
       <button class="btn-ghost" (click)="openFriendModal()">
-        <i class="ti ti-user-plus"></i> Invite
+        <i class="ti ti-user-plus"></i> {{ 'dashboard.topbar.invite' | translate }}
       </button>
       <button class="btn-accent" (click)="openNewProjectModal()">
-        <i class="ti ti-plus"></i> New Project
+        <i class="ti ti-plus"></i> {{ 'dashboard.topbar.newProject' | translate }}
       </button>
     </div>
   </div>
@@ -20,21 +20,21 @@
       <div class="stat-icon purple"><i class="ti ti-folder"></i></div>
       <div class="stat-body">
         <div class="stat-value">{{ activeProjectsCount }}</div>
-        <div class="stat-label">Active projects</div>
+        <div class="stat-label">{{ 'dashboard.stats.activeProjects' | translate }}</div>
       </div>
     </div>
     <div class="stat-card" (click)="goToMyTasks()">
       <div class="stat-icon amber"><i class="ti ti-clock"></i></div>
       <div class="stat-body">
         <div class="stat-value">{{ pendingTasksCount }}</div>
-        <div class="stat-label">Tasks pending</div>
+        <div class="stat-label">{{ 'dashboard.stats.tasksPending' | translate }}</div>
       </div>
     </div>
     <div class="stat-card" (click)="goToMyTasks()">
       <div class="stat-icon green"><i class="ti ti-circle-check"></i></div>
       <div class="stat-body">
         <div class="stat-value">{{ completedTasksCount }}</div>
-        <div class="stat-label">Completed</div>
+        <div class="stat-label">{{ 'dashboard.stats.completed' | translate }}</div>
       </div>
     </div>
   </div>
@@ -54,25 +54,26 @@
                 stroke-dashoffset="66"/>
       </svg>
       <div class="score-center">
-        <span class="score-num">{{ dailyScore }}</span>
-        <span class="score-unit">%</span>
+        <span class="score-value">
+          <span class="score-num">{{ dailyScore }}</span><span class="score-unit">%</span>
+        </span>
       </div>
     </div>
 
     <!-- Label + breakdown + 7-day trend -->
     <div class="score-details">
       <div class="focus-header">
-        <span class="focus-title">Today's Focus Score</span>
+        <span class="focus-title">{{ 'dashboard.focus.title' | translate }}</span>
         <span class="focus-label" [ngClass]="scoreClass">{{ scoreLabel }}</span>
       </div>
       <p class="focus-breakdown">{{ scoreBreakdown }}</p>
 
       <div class="trend-section">
-        <span class="trend-heading">7-day streak</span>
+        <span class="trend-heading">{{ 'dashboard.focus.trend7Day' | translate }}</span>
         <div class="trend-bars">
           <div class="trend-col" *ngFor="let day of trendData"
                [class.is-today]="day.isToday"
-               [title]="day.dayLabel + (day.score !== null ? ' — ' + day.score + '%' : ' — no data yet')">
+               [title]="day.dayLabel + (day.score !== null ? ' — ' + day.score + '%' : ' — ' + ('dashboard.focus.noDataYet' | translate))">
             <div class="trend-track">
               <div class="trend-fill"
                    [style.height.px]="getBarHeight(day.score)"
@@ -89,19 +90,19 @@
     <div class="score-stats">
       <div class="stat-item">
         <span class="stat-num">{{ tasksDueToday.length }}</span>
-        <span class="stat-desc">Planned</span>
+        <span class="stat-desc">{{ 'dashboard.focus.planned' | translate }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-num done">{{ completedDueToday.length }}</span>
-        <span class="stat-desc">Done today</span>
+        <span class="stat-desc">{{ 'dashboard.focus.doneToday' | translate }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-num bonus">{{ extraCompletedToday.length }}</span>
-        <span class="stat-desc">Bonus</span>
+        <span class="stat-desc">{{ 'dashboard.focus.bonus' | translate }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-num" [class.overdue]="overdueActiveTasks.length > 0">{{ overdueActiveTasks.length }}</span>
-        <span class="stat-desc">Overdue</span>
+        <span class="stat-desc">{{ 'dashboard.focus.overdue' | translate }}</span>
       </div>
     </div>
 
@@ -111,13 +112,13 @@
   <div class="two-col">
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">Recent projects</span>
-        <button class="link-btn" (click)="goToProjects()">View all →</button>
+        <span class="panel-title">{{ 'dashboard.panels.recentProjects' | translate }}</span>
+        <button class="link-btn" (click)="goToProjects()">{{ 'dashboard.panels.viewAll' | translate }}</button>
       </div>
 
       <div class="empty-state" *ngIf="recentProjects.length === 0">
-        No projects yet.
-        <span class="link-btn" (click)="openNewProjectModal()">Create one →</span>
+        {{ 'dashboard.panels.noProjectsYet' | translate }}
+        <span class="link-btn" (click)="openNewProjectModal()">{{ 'dashboard.panels.createOne' | translate }}</span>
       </div>
 
       <div class="project-row" *ngFor="let project of recentProjects" (click)="goToProject(project.id)">
@@ -125,7 +126,7 @@
           <div class="project-dot"></div>
           <div class="project-texts">
             <span class="project-name">{{ project.name }}</span>
-            <span class="project-desc">{{ project.description || 'No description' }}</span>
+            <span class="project-desc">{{ project.description || ('dashboard.panels.noDescription' | translate) }}</span>
           </div>
         </div>
         <div class="project-right">
@@ -140,23 +141,23 @@
     <div class="right-col">
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Task summary</span>
-          <button class="link-btn" (click)="goToMyTasks()">View all →</button>
+          <span class="panel-title">{{ 'dashboard.panels.taskSummary' | translate }}</span>
+          <button class="link-btn" (click)="goToMyTasks()">{{ 'dashboard.panels.viewAll' | translate }}</button>
         </div>
         <div class="task-summary">
           <div class="summary-row">
             <span class="dot todo"></span>
-            <span class="summary-label">To do</span>
+            <span class="summary-label">{{ 'dashboard.panels.todo' | translate }}</span>
             <span class="summary-count">{{ pendingTasksCount }}</span>
           </div>
           <div class="summary-row">
             <span class="dot done"></span>
-            <span class="summary-label">Completed</span>
+            <span class="summary-label">{{ 'dashboard.panels.completed' | translate }}</span>
             <span class="summary-count green">{{ completedTasksCount }}</span>
           </div>
           <div class="summary-row">
             <span class="dot total"></span>
-            <span class="summary-label">Total</span>
+            <span class="summary-label">{{ 'dashboard.panels.total' | translate }}</span>
             <span class="summary-count">{{ myTasks.length }}</span>
           </div>
         </div>
@@ -164,12 +165,12 @@
 
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Up next</span>
-          <button class="link-btn" (click)="goToMyTasks()">All tasks →</button>
+          <span class="panel-title">{{ 'dashboard.panels.upNext' | translate }}</span>
+          <button class="link-btn" (click)="goToMyTasks()">{{ 'dashboard.panels.allTasksLink' | translate }}</button>
         </div>
 
         <div class="empty-state small" *ngIf="pendingTasks.length === 0">
-          No pending tasks. Great work!
+          {{ 'dashboard.panels.noPendingTasks' | translate }}
         </div>
 
         <div class="mini-task" *ngFor="let task of pendingTasks">
@@ -181,18 +182,18 @@
               {{ getProjectNameById(task.projectId) }}
             </span>
           </div>
-          <span class="mini-badge">todo</span>
+          <span class="mini-badge">{{ 'dashboard.panels.todoBadge' | translate }}</span>
         </div>
       </div>
 
       <!-- UPCOMING DEADLINES WIDGET (Part 2C of the spec) -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Upcoming deadlines</span>
+          <span class="panel-title">{{ 'dashboard.panels.upcomingDeadlines' | translate }}</span>
         </div>
 
         <div class="empty-state small" *ngIf="upcomingDeadlines.length === 0">
-          No upcoming deadlines 🎉
+          {{ 'dashboard.panels.noUpcomingDeadlines' | translate }}
         </div>
 
         <div class="deadline-row"
@@ -206,7 +207,7 @@
             <span class="deadline-title">{{ item.title }}</span>
             <span class="deadline-sub">
               <i class="ti" [class.ti-checklist]="item.kind === 'task'" [class.ti-folder]="item.kind === 'project'"></i>
-              {{ item.kind === 'task' ? item.projectName : 'Project' }}
+              {{ item.kind === 'task' ? item.projectName : ('dashboard.panels.project' | translate) }}
             </span>
           </div>
           <span class="deadline-when"
@@ -225,14 +226,14 @@
 <div class="modal-overlay" *ngIf="showFriendModal" (click)="closeFriendModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2><i class="ti ti-user-search" style="color:var(--accent)"></i> Find a Friend</h2>
+      <h2><i class="ti ti-user-search" style="color:var(--accent)"></i> {{ 'dashboard.friendModal.title' | translate }}</h2>
       <button class="close-btn" (click)="closeFriendModal()"><i class="ti ti-x"></i></button>
     </div>
     <p style="color:#6b6f8a;font-size:13px;margin:0">
-      Enter someone's exact name or email address to find them.
+      {{ 'dashboard.friendModal.description' | translate }}
     </p>
     <div style="display:flex;gap:8px">
-      <input class="input" type="text" placeholder="Name or email…"
+      <input class="input" type="text" [placeholder]="'dashboard.friendModal.namePlaceholder' | translate"
              [(ngModel)]="friendSearchQuery"
              (keydown)="onFriendSearchKeydown($event)"
              [disabled]="isFriendSearching"
@@ -240,13 +241,13 @@
       <button class="btn-accent" (click)="performFriendSearch()"
               [disabled]="isFriendSearching || !friendSearchQuery.trim()">
         <i class="ti" [class.ti-search]="!isFriendSearching" [class.ti-loader-2]="isFriendSearching"></i>
-        {{ isFriendSearching ? 'Searching…' : 'Search' }}
+        {{ (isFriendSearching ? 'dashboard.friendModal.searching' : 'dashboard.friendModal.search') | translate }}
       </button>
     </div>
     <div *ngIf="friendSearchDone && friendSearchResults.length === 0"
          style="display:flex;align-items:center;gap:8px;color:#6b6f8a;font-size:13px">
       <i class="ti ti-user-x" style="font-size:18px;color:#3a3d52"></i>
-      No user found with that name or email.
+      {{ 'dashboard.friendModal.noUserFound' | translate }}
     </div>
     <div *ngFor="let result of friendSearchResults" class="friend-result-card">
       <div class="friend-result-avatar">{{ getFriendInitials(result.user.name) }}</div>
@@ -255,20 +256,20 @@
         <span class="friend-result-email">{{ result.user.email }}</span>
       </div>
       <span *ngIf="result.status === 'accepted'" class="already-badge">
-        <i class="ti ti-check"></i> Friends
+        <i class="ti ti-check"></i> {{ 'dashboard.friendModal.friends' | translate }}
       </span>
       <span *ngIf="result.status === 'pending'" class="already-badge pending">
-        <i class="ti ti-clock"></i> Requested
+        <i class="ti ti-clock"></i> {{ 'dashboard.friendModal.requested' | translate }}
       </span>
       <button *ngIf="result.status === 'none'" class="btn-accent" (click)="addFriendFromDashboard(result.user)">
-        <i class="ti ti-user-plus"></i> Add
+        <i class="ti ti-user-plus"></i> {{ 'dashboard.friendModal.add' | translate }}
       </button>
     </div>
     <div *ngIf="friendAddSuccess" class="friend-success-msg">
-      <i class="ti ti-circle-check"></i> Friend request sent to {{ friendAddedName }}!
+      <i class="ti ti-circle-check"></i> {{ 'dashboard.friendModal.requestSent' | translate:{ name: friendAddedName } }}
     </div>
     <div class="modal-actions">
-      <button class="btn-ghost" (click)="closeFriendModal()">Close</button>
+      <button class="btn-ghost" (click)="closeFriendModal()">{{ 'dashboard.friendModal.close' | translate }}</button>
     </div>
   </div>
 </div>
@@ -277,20 +278,20 @@
 <div class="modal-overlay" *ngIf="showNewProjectModal" (click)="closeNewProjectModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>New Project</h2>
+      <h2>{{ 'dashboard.newProjectModal.title' | translate }}</h2>
       <button class="close-btn" (click)="closeNewProjectModal()"><i class="ti ti-x"></i></button>
     </div>
     <div class="form-group">
-      <label>Project name</label>
-      <input class="input" type="text" placeholder="e.g. Build a Car" [(ngModel)]="newProjectName" />
+      <label>{{ 'dashboard.newProjectModal.nameLabel' | translate }}</label>
+      <input class="input" type="text" [placeholder]="'dashboard.newProjectModal.namePlaceholder' | translate" [(ngModel)]="newProjectName" />
     </div>
     <div class="form-group">
-      <label>Description</label>
-      <input class="input" type="text" placeholder="What is this project about?" [(ngModel)]="newProjectDescription" />
+      <label>{{ 'dashboard.newProjectModal.descriptionLabel' | translate }}</label>
+      <input class="input" type="text" [placeholder]="'dashboard.newProjectModal.descriptionPlaceholder' | translate" [(ngModel)]="newProjectDescription" />
     </div>
     <div class="modal-actions">
-      <button class="btn-ghost" (click)="closeNewProjectModal()">Cancel</button>
-      <button class="btn-accent" (click)="createProject()">Create</button>
+      <button class="btn-ghost" (click)="closeNewProjectModal()">{{ 'dashboard.newProjectModal.cancel' | translate }}</button>
+      <button class="btn-accent" (click)="createProject()">{{ 'dashboard.newProjectModal.create' | translate }}</button>
     </div>
   </div>
 </div>

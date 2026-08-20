@@ -2,12 +2,13 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -16,7 +17,7 @@ export class LoginComponent {
   password = '';
   errorMessage = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router, private translate: TranslateService) {}
 
   onLogin() {
     this.authService.login(this.email, this.password).subscribe({
@@ -24,11 +25,11 @@ export class LoginComponent {
         if (user) {
           this.router.navigate(['/app/dashboard']);
         } else {
-          this.errorMessage = 'Wrong email or password.';
+          this.errorMessage = this.translate.instant('auth.login.errors.wrongCredentials');
         }
       },
       error: () => {
-        this.errorMessage = 'Something went wrong. Try again.';
+        this.errorMessage = this.translate.instant('auth.login.errors.generic');
       }
     });
   }
