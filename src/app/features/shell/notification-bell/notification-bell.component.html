@@ -1,0 +1,56 @@
+<div class="notification-bell">
+  <button class="bell-trigger" (click)="toggle()" [attr.aria-label]="'notificationsBell.title' | translate">
+    <i class="ti ti-bell" aria-hidden="true"></i>
+    <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+  </button>
+
+  <div class="dropdown" *ngIf="isOpen">
+    <div class="dropdown-header">
+      <span class="dropdown-title">{{ 'notificationsBell.title' | translate }}</span>
+      <button class="mark-all-btn" *ngIf="unreadCount > 0" (click)="markAllRead()">
+        {{ 'notificationsBell.markAllRead' | translate }}
+      </button>
+    </div>
+
+    <div class="dropdown-list">
+      <div class="empty-state" *ngIf="notifications.length === 0">
+        {{ 'notificationsBell.empty' | translate }}
+      </div>
+
+      <div
+        *ngFor="let item of notifications"
+        class="notification-row"
+        [class.unread]="!item.isRead"
+        (click)="onNotificationClick(item)">
+        <div class="row-icon" [ngClass]="item.type">
+          <i class="ti {{ typeIcon(item.type) }}" aria-hidden="true"></i>
+        </div>
+        <div class="row-body">
+          <span class="row-text">{{ typeTextKey(item.type) | translate: { name: actorName(item) } }}</span>
+          <span class="row-time">{{ relativeTime(item.createdAt) }}</span>
+        </div>
+        <span class="unread-dot" *ngIf="!item.isRead"></span>
+      </div>
+    </div>
+
+    <div class="dropdown-section" *ngIf="deadlinesEnabled">
+      <div class="section-label">{{ 'notificationsBell.deadlinesHeading' | translate }}</div>
+
+      <div class="empty-state small" *ngIf="deadlineItems.length === 0">
+        {{ 'notificationsBell.noDeadlines' | translate }}
+      </div>
+
+      <div
+        *ngFor="let item of deadlineItems"
+        class="notification-row deadline"
+        (click)="onDeadlineClick(item)">
+        <div class="row-icon" [ngClass]="'deadline-' + item.urgency">
+          <i class="ti ti-clock-exclamation" aria-hidden="true"></i>
+        </div>
+        <div class="row-body">
+          <span class="row-text">{{ deadlineTextKey(item.urgency) | translate: { title: item.task.title } }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

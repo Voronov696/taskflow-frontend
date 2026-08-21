@@ -145,9 +145,26 @@
 .main-content {
   flex: 1;
   height: 100%;
-  overflow-y: auto;
   background: #0f1117;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.topbar-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 10px 24px;
+  border-bottom: 1px solid #1e2235;
+  flex-shrink: 0;
+}
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .mobile-topbar {
@@ -168,6 +185,8 @@
   }
 
   .mobile-logo { color: #fff; font-size: 16px; font-weight: 500; }
+
+  .mobile-bell { margin-left: auto; }
 }
 
 .sidebar-overlay {
@@ -203,4 +222,7 @@
     width: 100%;
     height: calc(100vh - 48px);
   }
+
+  // Bell already lives in .mobile-topbar on small screens — no need for a second one.
+  .topbar-strip { display: none; }
 }

@@ -5,11 +5,13 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../domain/models/user.model';
 import { filter } from 'rxjs';
+import { NotificationBellComponent } from './notification-bell/notification-bell.component';
+import { NotificationService } from '../../core/notification/notification.service';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, RouterModule, TranslatePipe, NotificationBellComponent],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'
 })
@@ -25,7 +27,11 @@ export class ShellComponent implements OnInit {
     { labelKey: 'nav.team',      icon: 'ti-users',      route: 'team'      },
   ];
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private notificationService: NotificationService,
+  ) {}
 
   ngOnInit() {
   const accent = localStorage.getItem('accent');
@@ -61,6 +67,7 @@ export class ShellComponent implements OnInit {
   }
 
   logout() {
+    this.notificationService.reset();
     this.authService.logout();
     this.router.navigate(['/login']);
   }

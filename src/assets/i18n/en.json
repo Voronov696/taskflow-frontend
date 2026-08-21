@@ -99,6 +99,30 @@
     "daysLeft": "{{count}} day left",
     "daysLeftPlural": "{{count}} days left"
   },
+  "notificationsBell": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "You're all caught up.",
+    "deadlinesHeading": "Deadlines",
+    "noDeadlines": "No upcoming deadlines.",
+    "types": {
+      "friendRequest": "{{name}} sent you a friend request",
+      "taskAssigned": "{{name}} assigned you a task",
+      "taskCompleted": "{{name}} completed a task",
+      "unknownActor": "Someone"
+    },
+    "deadline": {
+      "overdue": "Task \"{{title}}\" is overdue",
+      "dueToday": "Task \"{{title}}\" is due today",
+      "dueSoon": "Task \"{{title}}\" is due soon"
+    },
+    "time": {
+      "now": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    }
+  },
   "deadline": {
     "noDeadline": "No deadline",
     "expired": "Expired",
@@ -299,9 +323,10 @@
     "notifications": {
       "title": "Notifications",
       "subtitle": "Choose what you want to be notified about.",
+      "friendRequest": { "label": "Friend requests", "desc": "When someone sends you a friend request" },
       "taskAssigned": { "label": "Task assigned to me", "desc": "When someone assigns a task to you" },
-      "projectUpdates": { "label": "Project updates", "desc": "When a project you're in is updated" },
-      "weeklySummary": { "label": "Weekly summary", "desc": "A weekly overview of your productivity" },
+      "taskCompleted": { "label": "Task completed in my project", "desc": "When a task is completed in a project you're part of" },
+      "deadlineReminders": { "label": "Deadline reminders", "desc": "Upcoming, due-today and overdue task deadlines" },
       "savePreferences": "Save preferences",
       "saveSuccess": "Notification preferences saved."
     },

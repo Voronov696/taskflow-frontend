@@ -4,6 +4,7 @@
       <i class="ti ti-menu-2"></i>
     </button>
     <span class="mobile-logo">TaskFlow</span>
+    <app-notification-bell class="mobile-bell"></app-notification-bell>
   </div>
 
   <div class="sidebar-overlay"
@@ -60,6 +61,11 @@
   </aside>
 
   <main class="main-content">
-    <router-outlet />
+    <div class="topbar-strip">
+      <app-notification-bell></app-notification-bell>
+    </div>
+    <div class="content-area">
+      <router-outlet />
+    </div>
   </main>
 </div>

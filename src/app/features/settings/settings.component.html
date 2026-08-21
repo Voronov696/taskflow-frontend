@@ -121,34 +121,44 @@
 
                 <div class="toggle-row">
                     <div class="toggle-info">
+                        <span class="toggle-label">{{ 'settings.notifications.friendRequest.label' | translate }}</span>
+                        <span class="toggle-desc">{{ 'settings.notifications.friendRequest.desc' | translate }}</span>
+                    </div>
+                    <div class="toggle" [class.on]="notifications.friend_request"
+                        (click)="notifications.friend_request = !notifications.friend_request">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
                         <span class="toggle-label">{{ 'settings.notifications.taskAssigned.label' | translate }}</span>
                         <span class="toggle-desc">{{ 'settings.notifications.taskAssigned.desc' | translate }}</span>
                     </div>
-                    <div class="toggle" [class.on]="notifications.taskAssigned"
-                        (click)="notifications.taskAssigned = !notifications.taskAssigned">
+                    <div class="toggle" [class.on]="notifications.task_assigned"
+                        (click)="notifications.task_assigned = !notifications.task_assigned">
                         <div class="toggle-thumb"></div>
                     </div>
                 </div>
 
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <span class="toggle-label">{{ 'settings.notifications.projectUpdates.label' | translate }}</span>
-                        <span class="toggle-desc">{{ 'settings.notifications.projectUpdates.desc' | translate }}</span>
+                        <span class="toggle-label">{{ 'settings.notifications.taskCompleted.label' | translate }}</span>
+                        <span class="toggle-desc">{{ 'settings.notifications.taskCompleted.desc' | translate }}</span>
                     </div>
-                    <div class="toggle" [class.on]="notifications.projectUpdates" (click)="
-              notifications.projectUpdates = !notifications.projectUpdates
-            ">
+                    <div class="toggle" [class.on]="notifications.task_completed"
+                        (click)="notifications.task_completed = !notifications.task_completed">
                         <div class="toggle-thumb"></div>
                     </div>
                 </div>
 
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <span class="toggle-label">{{ 'settings.notifications.weeklySummary.label' | translate }}</span>
-                        <span class="toggle-desc">{{ 'settings.notifications.weeklySummary.desc' | translate }}</span>
+                        <span class="toggle-label">{{ 'settings.notifications.deadlineReminders.label' | translate }}</span>
+                        <span class="toggle-desc">{{ 'settings.notifications.deadlineReminders.desc' | translate }}</span>
                     </div>
-                    <div class="toggle" [class.on]="notifications.weeklySummary"
-                        (click)="notifications.weeklySummary = !notifications.weeklySummary">
+                    <div class="toggle" [class.on]="notifications.deadline"
+                        (click)="notifications.deadline = !notifications.deadline">
                         <div class="toggle-thumb"></div>
                     </div>
                 </div>

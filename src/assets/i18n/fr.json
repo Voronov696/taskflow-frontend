@@ -99,6 +99,30 @@
     "daysLeft": "{{count}} jour restant",
     "daysLeftPlural": "{{count}} jours restants"
   },
+  "notificationsBell": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "empty": "Vous êtes à jour.",
+    "deadlinesHeading": "Échéances",
+    "noDeadlines": "Aucune échéance à venir.",
+    "types": {
+      "friendRequest": "{{name}} vous a envoyé une demande d'ami",
+      "taskAssigned": "{{name}} vous a assigné une tâche",
+      "taskCompleted": "{{name}} a terminé une tâche",
+      "unknownActor": "Quelqu'un"
+    },
+    "deadline": {
+      "overdue": "La tâche « {{title}} » est en retard",
+      "dueToday": "La tâche « {{title}} » est à rendre aujourd'hui",
+      "dueSoon": "La tâche « {{title}} » arrive bientôt à échéance"
+    },
+    "time": {
+      "now": "À l'instant",
+      "minutesAgo": "il y a {{count}} min",
+      "hoursAgo": "il y a {{count}} h",
+      "daysAgo": "il y a {{count}} j"
+    }
+  },
   "deadline": {
     "noDeadline": "Aucune échéance",
     "expired": "Expirée",
@@ -299,9 +323,10 @@
     "notifications": {
       "title": "Notifications",
       "subtitle": "Choisissez ce dont vous souhaitez être informé.",
+      "friendRequest": { "label": "Demandes d'ami", "desc": "Quand quelqu'un vous envoie une demande d'ami" },
       "taskAssigned": { "label": "Tâche qui m'est assignée", "desc": "Quand quelqu'un vous assigne une tâche" },
-      "projectUpdates": { "label": "Mises à jour de projet", "desc": "Quand un projet auquel vous participez est mis à jour" },
-      "weeklySummary": { "label": "Résumé hebdomadaire", "desc": "Un aperçu hebdomadaire de votre productivité" },
+      "taskCompleted": { "label": "Tâche terminée dans mon projet", "desc": "Quand une tâche est terminée dans un projet auquel vous participez" },
+      "deadlineReminders": { "label": "Rappels d'échéance", "desc": "Échéances proches, du jour même ou dépassées" },
       "savePreferences": "Enregistrer les préférences",
       "saveSuccess": "Préférences de notification enregistrées."
     },

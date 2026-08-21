@@ -5,6 +5,8 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { LanguageService, AppLanguage } from '../../core/i18n/language.service';
+import { NotificationService } from '../../core/notification/notification.service';
+import { NotificationPreferences, getNotificationPreferences, saveNotificationPreferences } from '../../core/notification/notification-preferences';
 import { User } from '../../domain/models/user.model';
 import { environment } from '../../../environments/environment';
 
@@ -36,11 +38,7 @@ export class SettingsComponent implements OnInit {
 
   currentLang: AppLanguage = 'en';
 
-  notifications = {
-    taskAssigned: true,
-    projectUpdates: true,
-    weeklySummary: false,
-  };
+  notifications: NotificationPreferences = getNotificationPreferences();
 
   currentPassword = '';
   newPassword = '';
@@ -54,7 +52,8 @@ export class SettingsComponent implements OnInit {
     private authService: AuthService,
     private http: HttpClient,
     private languageService: LanguageService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private notificationService: NotificationService,
   ) {}
 
  ngOnInit() {
@@ -69,9 +68,6 @@ export class SettingsComponent implements OnInit {
     this.selectedAccent = saved;
     document.documentElement.style.setProperty('--accent', saved);
   }
-  const notifs = localStorage.getItem('notifications');
-  if (notifs) this.notifications = JSON.parse(notifs);
-
   this.currentLang = this.languageService.getLanguage();
 }
 
@@ -149,7 +145,10 @@ export class SettingsComponent implements OnInit {
   }
 
   saveNotifications() {
-    localStorage.setItem('notifications', JSON.stringify(this.notifications));
+    saveNotificationPreferences(this.notifications);
+    // Не ждём следующего 45-секундного тика поллинга — колокольчик должен
+    // подхватить новые фильтры сразу, пока пользователь ещё в Settings.
+    this.notificationService.refresh().subscribe();
     this.successMessage = this.translate.instant('settings.notifications.saveSuccess');
     setTimeout(() => this.successMessage = '', 3000);
   }

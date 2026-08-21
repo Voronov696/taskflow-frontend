@@ -70,3 +70,22 @@ CREATE TABLE IF NOT EXISTS friendships (
   friend_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status    TEXT NOT NULL DEFAULT 'accepted' -- 'pending' | 'accepted'
 );
+
+-- ===================== NOTIFICATIONS =====================
+-- Уведомления пользователю о трёх событиях: заявка в друзья, назначение
+-- задачи, выполнение задачи в общем проекте (см. миграцию 013). Дедлайны
+-- сюда не входят — считаются на лету на фронте, не хранятся.
+CREATE TABLE IF NOT EXISTS notifications (
+  id            TEXT PRIMARY KEY,
+  user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type          TEXT NOT NULL, -- 'friend_request' | 'task_assigned' | 'task_completed'
+  actor_id      TEXT REFERENCES users(id) ON DELETE SET NULL,
+  task_id       TEXT REFERENCES tasks(id) ON DELETE CASCADE,
+  project_id    TEXT REFERENCES projects(id) ON DELETE CASCADE,
+  friendship_id TEXT REFERENCES friendships(id) ON DELETE CASCADE,
+  is_read       BOOLEAN NOT NULL DEFAULT false,
+  created_at    TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user
+  ON notifications(user_id, is_read, created_at DESC);

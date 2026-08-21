@@ -103,6 +103,36 @@ async function ensureMember(projectId, userId, role) {
   );
 }
 
+// Создаёт одно уведомление (см. миграцию 013). Общий helper для трёх мест
+// (POST /friendships, POST /tasks, PATCH /tasks/:id), чтобы не дублировать
+// ни сам INSERT, ни правило "не уведомляем сами себя".
+//
+// actorId/taskId/projectId/friendshipId — необязательные, разные type
+// используют разный набор (friend_request → friendshipId,
+// task_assigned/task_completed → taskId + projectId).
+//
+// Если actorId совпадает с userId (получателем) — молча ничего не
+// делаем: например, владелец проекта сам себе назначил задачу или сам
+// же её выполнил — уведомлять не о чем.
+//
+// Ошибку INSERT здесь же и гасим (try/catch внутри самой функции, а не
+// в каждом месте вызова) — уведомление это побочный эффект основного
+// действия (заявка/задача уже создана или обновлена к этому моменту),
+// его сбой не должен возвращать 500 клиенту, который ждёт ответ совсем
+// на другой запрос.
+async function createNotification({ userId, type, actorId, taskId, projectId, friendshipId }) {
+  if (actorId && actorId === userId) return;
+  try {
+    await query(
+      `INSERT INTO notifications (id, user_id, type, actor_id, task_id, project_id, friendship_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [generateId(), userId, type, actorId ?? null, taskId ?? null, projectId ?? null, friendshipId ?? null]
+    );
+  } catch (err) {
+    console.error('Failed to create notification:', err);
+  }
+}
+
 // Функция строит часть "WHERE ..." SQL-запроса из req.query.
 //
 // columnMap — объект вида { camelCaseИмяВQuery: 'snake_case_имя_в_базе' },
@@ -786,6 +816,19 @@ app.post('/tasks', authenticateToken, async (req, res) => {
       await ensureMember(newTask.projectId, newTask.assignedUserId, 'member');
     }
 
+    // task_assigned — только если задачу создали сразу с исполнителем.
+    // createNotification сама пропустит случай "назначил сам себе"
+    // (actorId === userId).
+    if (newTask.assignedUserId) {
+      await createNotification({
+        userId: newTask.assignedUserId,
+        type: 'task_assigned',
+        actorId: req.user.id,
+        taskId: result.rows[0].id,
+        projectId: newTask.projectId,
+      });
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -836,6 +879,20 @@ app.patch('/tasks/:id', authenticateToken, async (req, res) => {
       return res.json(existing.rows[0]);
     }
 
+    // Состояние ДО обновления — нужно, чтобы понять, что именно изменилось
+    // (assignedUserId, переход status → 'done'), а не слать уведомление
+    // заново при каждом PATCH, где эти поля просто присланы тем же
+    // значением, что и было (например, PATCH меняет только dueDate, но
+    // assignedUserId тоже пришёл в body с тем же значением).
+    const before = await query(
+      `SELECT assigned_user_id AS "assignedUserId", status FROM tasks WHERE id = $1`,
+      [req.params.id]
+    );
+    if (before.rows.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    const { assignedUserId: prevAssignedUserId, status: prevStatus } = before.rows[0];
+
     // id задачи (из URL) добавляем последним параметром — под него
     // отведён плейсхолдер $N, где N — следующий свободный номер после
     // параметров из setSql.
@@ -858,6 +915,45 @@ app.patch('/tasks/:id', authenticateToken, async (req, res) => {
     // так что лишний вызов на каждый PATCH не создаёт лишних записей.
     if (updatedTask.projectId && updatedTask.assignedUserId) {
       await ensureMember(updatedTask.projectId, updatedTask.assignedUserId, 'member');
+    }
+
+    // task_assigned — только если assignedUserId реально пришёл в этом
+    // PATCH ('in patchBody', а не просто "не пусто" — иначе мы не отличим
+    // "прислали то же значение" от "поля вообще не было в body") И он
+    // отличается от того, что было. createNotification сама пропустит
+    // самоназначение.
+    if (
+      'assignedUserId' in patchBody &&
+      updatedTask.assignedUserId &&
+      updatedTask.assignedUserId !== prevAssignedUserId
+    ) {
+      await createNotification({
+        userId: updatedTask.assignedUserId,
+        type: 'task_assigned',
+        actorId: req.user.id,
+        taskId: updatedTask.id,
+        projectId: updatedTask.projectId,
+      });
+    }
+
+    // task_completed — переход именно В 'done' (а не "уже был done" —
+    // иначе PATCH, который не трогает status, но задача уже done, слал бы
+    // уведомление заново), и только для задач внутри проекта — уведомляем
+    // владельца проекта. createNotification сама пропустит случай, когда
+    // исполнивший и есть владелец.
+    if (updatedTask.status === 'done' && prevStatus !== 'done' && updatedTask.projectId) {
+      const project = await query('SELECT owner_id AS "ownerId" FROM projects WHERE id = $1', [
+        updatedTask.projectId,
+      ]);
+      if (project.rows.length > 0) {
+        await createNotification({
+          userId: project.rows[0].ownerId,
+          type: 'task_completed',
+          actorId: req.user.id,
+          taskId: updatedTask.id,
+          projectId: updatedTask.projectId,
+        });
+      }
     }
 
     res.json(updatedTask);
@@ -969,6 +1065,14 @@ app.post('/friendships', authenticateToken, async (req, res) => {
        RETURNING ${FRIENDSHIPS_SELECT}`,
       [newFriendship.id, newFriendship.userId, newFriendship.friendId]
     );
+
+    await createNotification({
+      userId: newFriendship.friendId,
+      type: 'friend_request',
+      actorId: newFriendship.userId,
+      friendshipId: newFriendship.id,
+    });
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -1041,6 +1145,70 @@ app.delete('/friendships/:id', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to remove friend' });
+  }
+});
+
+// ===================== NOTIFICATIONS =====================
+
+const NOTIFICATIONS_SELECT = `id, user_id AS "userId", type, actor_id AS "actorId", task_id AS "taskId", project_id AS "projectId", friendship_id AS "friendshipId", is_read AS "isRead", created_at AS "createdAt"`;
+
+// GET /notifications — только свои (user_id = req.user.id, из токена, не
+// из query — тот же принцип приватности, что и у GET /friendships).
+// ORDER BY is_read, created_at DESC: is_read = false меньше true, так что
+// непрочитанные идут первыми, а внутри каждой группы — более новые сверху.
+app.get('/notifications', authenticateToken, async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT ${NOTIFICATIONS_SELECT} FROM notifications WHERE user_id = $1 ORDER BY is_read ASC, created_at DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// PATCH /notifications/:id/read — отметить одно уведомление прочитанным.
+// Отдельный SELECT перед UPDATE (а не просто "UPDATE ... WHERE id = $1
+// AND user_id = $2" и проверка rowCount) — чтобы различить два разных
+// случая: записи нет вообще (404) и запись есть, но чужая (403), как и
+// в PATCH/DELETE /friendships/:id.
+app.patch('/notifications/:id/read', authenticateToken, async (req, res) => {
+  try {
+    const existing = await query('SELECT user_id AS "userId" FROM notifications WHERE id = $1', [
+      req.params.id,
+    ]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    if (existing.rows[0].userId !== req.user.id) {
+      return res.status(403).json({ error: "Cannot modify another user's notification" });
+    }
+
+    const result = await query(
+      `UPDATE notifications SET is_read = TRUE WHERE id = $1 RETURNING ${NOTIFICATIONS_SELECT}`,
+      [req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+// PATCH /notifications/read-all — отметить прочитанными все уведомления
+// текущего юзера разом. Не generic-PATCH: body не участвует, единственное
+// действие — is_read = TRUE для своих же непрочитанных записей.
+app.patch('/notifications/read-all', authenticateToken, async (req, res) => {
+  try {
+    await query('UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE', [
+      req.user.id,
+    ]);
+    res.json({});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to mark notifications as read' });
   }
 });
 
